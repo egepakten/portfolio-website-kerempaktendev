@@ -1,76 +1,97 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Content-Type": "application/json",
+};
+
+interface GenerateCoverRequest {
+  title: string;
+  category?: string;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
-    const { prompt } = await req.json()
+    const { title, category }: GenerateCoverRequest = await req.json();
 
-    if (!prompt) {
+    if (!title) {
       return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+        JSON.stringify({ error: "Title is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    console.log('Generating cover image for prompt:', prompt)
-
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured')
+    const replicateToken = Deno.env.get("REPLICATE_API_TOKEN");
+    
+    if (!replicateToken) {
+      console.warn("REPLICATE_API_TOKEN not set, returning placeholder");
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          url: `https://via.placeholder.com/1200x630?text=${encodeURIComponent(title)}`,
+          message: "Using placeholder image - set REPLICATE_API_TOKEN for AI-generated covers"
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Call Replicate API to generate image
+    const prompt = `A professional blog cover image for an article titled "${title}"${category ? ` about ${category}` : ''}. Modern, clean design with typography. 1200x630 pixels.`;
+
+    const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Token ${replicateToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: `Generate a professional, modern blog cover image for a tech blog post about: ${prompt}. The image should be visually appealing, clean, and suitable for a tech blog header. Use abstract or conceptual imagery, vibrant colors, and modern design aesthetics. Do not include any text in the image.`
-          }
-        ],
-        modalities: ["image", "text"]
-      })
-    })
+        version: "27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bea92f6",
+        input: {
+          prompt: prompt,
+          width: 1200,
+          height: 630,
+          num_outputs: 1,
+        },
+      }),
+    });
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('AI API error:', errorText)
-      throw new Error(`AI API error: ${response.status}`)
+      throw new Error(`Replicate API error: ${response.statusText}`);
     }
 
-    const data = await response.json()
-    console.log('AI response received')
+    const data = await response.json();
+    const imageUrl = data.output?.[0];
 
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url
-    
     if (!imageUrl) {
-      throw new Error('No image generated')
+      throw new Error("No image URL returned from Replicate");
     }
 
     return new Response(
-      JSON.stringify({ imageUrl }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  } catch (error: unknown) {
-    console.error('Error generating image:', error)
-    const message = error instanceof Error ? error.message : 'Failed to generate image'
+      JSON.stringify({ 
+        success: true, 
+        url: imageUrl,
+        message: "Cover image generated successfully"
+      }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  } catch (error: any) {
+    console.error("Error generating cover image:", error);
     return new Response(
-      JSON.stringify({ error: message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
   }
-})
+});
+

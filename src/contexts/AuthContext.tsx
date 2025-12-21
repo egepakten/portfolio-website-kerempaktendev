@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -49,6 +49,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  // Track recent sign-ups to prevent duplicate welcome emails
+  const recentSignUpsRef = useRef<Set<string>>(new Set());
 
   const checkAdminRole = async (userId: string) => {
     const { data } = await supabase
@@ -62,11 +64,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Check if this is a new user signing in for the first time (after email confirmation)
+          // Only send welcome email if we haven't already sent it for this user (via signUp)
+          if (event === 'SIGNED_IN') {
+            const userId = session.user.id;
+            
+            // Only send if we haven't already handled this sign-up recently
+            if (!recentSignUpsRef.current.has(userId)) {
+              const userCreatedAt = new Date(session.user.created_at);
+              const now = new Date();
+              const minutesSinceCreation = (now.getTime() - userCreatedAt.getTime()) / (1000 * 60);
+              
+              // Only send if user was created within last 5 minutes (likely new sign-up)
+              if (minutesSinceCreation < 5) {
+                // Mark this user so we don't send duplicate email
+                recentSignUpsRef.current.add(userId);
+                
+                // Fetch profile to get username
+                const { data: profileData } = await supabase
+                  .from('profiles')
+                  .select('username')
+                  .eq('user_id', userId)
+                  .maybeSingle();
+                
+                if (profileData) {
+                  // Send welcome email
+                  sendWelcomeEmail(session.user.email!, profileData.username);
+                }
+                
+                // Clean up after 10 minutes
+                setTimeout(() => {
+                  recentSignUpsRef.current.delete(userId);
+                }, 10 * 60 * 1000);
+              }
+            }
+          }
+          
           setTimeout(() => {
             fetchProfile(session.user.id);
             fetchSubscription(session.user.email!);
@@ -117,6 +155,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (data) setSubscription(data);
   };
 
+  const sendWelcomeEmail = async (email: string, username?: string) => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Missing Supabase configuration for welcome email');
+        return;
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({ email, name: username }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error sending welcome email:', errorData);
+      }
+    } catch (error) {
+      console.error('Error calling send-welcome-email Edge Function:', error);
+      // Don't throw error - welcome email failure shouldn't block sign-up
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
@@ -124,7 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, username: string, isGuest = false) => {
     const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -132,6 +199,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: { username, is_guest: isGuest }
       }
     });
+    
+    // If sign-up succeeds and user is immediately signed in (no email confirmation required)
+    // send welcome email immediately and mark user to prevent duplicate in onAuthStateChange
+    if (!error && data.user && data.session) {
+      const userId = data.user.id;
+      // Mark this user so onAuthStateChange doesn't send duplicate email
+      recentSignUpsRef.current.add(userId);
+      
+      // Send welcome email after a short delay to ensure profile is created
+      setTimeout(() => {
+        sendWelcomeEmail(email, username);
+      }, 1500);
+      
+      // Clean up after 10 minutes
+      setTimeout(() => {
+        recentSignUpsRef.current.delete(userId);
+      }, 10 * 60 * 1000);
+    }
+    // If email confirmation is required, the welcome email will be sent via onAuthStateChange
+    // when the user confirms their email and signs in
+    
     return { error };
   };
 
@@ -142,6 +230,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         redirectTo: `${window.location.origin}/`
       }
     });
+    // Welcome email will be sent via onAuthStateChange when user signs in
     return { error };
   };
 
@@ -192,11 +281,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const deleteAccount = async (reason: string) => {
     if (!user) return { error: new Error('Not authenticated') };
     
+    const userId = user.id;
+    
     // Store the deletion record first
     const { error: insertError } = await supabase
       .from('deleted_accounts')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         email: user.email || '',
         username: profile?.username || null,
         reason,
@@ -211,7 +302,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error: profileError } = await supabase
       .from('profiles')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
     
     if (profileError) return { error: profileError };
     
@@ -219,19 +310,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase
       .from('subscribers')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
     
     // Delete comments
     await supabase
       .from('post_comments')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
     
     // Delete likes
     await supabase
       .from('post_likes')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
+    
+    // Delete user from Supabase Auth using Edge Function
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      if (!accessToken || !supabaseUrl) {
+        console.error('Missing required credentials for user deletion');
+      } else {
+        const response = await fetch(`${supabaseUrl}/functions/v1/delete-user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': supabaseAnonKey || '',
+          },
+          body: JSON.stringify({ userId }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error deleting user from Auth:', errorData);
+          // Continue with sign out even if Edge Function fails
+        }
+      }
+    } catch (error) {
+      console.error('Error calling delete-user Edge Function:', error);
+      // Continue with sign out even if Edge Function fails
+    }
     
     // Sign out and clear state
     await supabase.auth.signOut();

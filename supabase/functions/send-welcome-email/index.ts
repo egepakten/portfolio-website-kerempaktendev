@@ -5,7 +5,9 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Content-Type": "application/json",
 };
 
 interface WelcomeEmailRequest {
@@ -16,7 +18,10 @@ interface WelcomeEmailRequest {
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -24,7 +29,7 @@ serve(async (req: Request): Promise<Response> => {
     
     console.log(`Sending welcome email to: ${email}`);
 
-    const siteUrl = Deno.env.get("SITE_URL") || "https://knakntixiudgwxudqqyw.lovableproject.com";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://kerempakten.dev";
     const personalizedName = name || "there";
 
     const emailResponse = await resend.emails.send({
@@ -43,7 +48,7 @@ serve(async (req: Request): Promise<Response> => {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!-- Header -->
             <tr>
-              <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
                 <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Welcome Aboard! 🚀</h1>
               </td>
             </tr>
@@ -57,7 +62,7 @@ serve(async (req: Request): Promise<Response> => {
                   Thank you for subscribing to my newsletter! I'm thrilled to have you join our community of curious minds.
                 </p>
                 
-                <div style="background-color: #f7fafc; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                <div style="background-color: #f0fdf4; border-radius: 12px; padding: 24px; margin: 24px 0;">
                   <h3 style="margin: 0 0 16px 0; color: #2d3748; font-size: 18px; font-weight: 600;">What to Expect:</h3>
                   <ul style="margin: 0; padding-left: 20px; color: #4a5568; font-size: 15px; line-height: 1.8;">
                     <li>📚 In-depth articles on technology and development</li>
@@ -72,7 +77,7 @@ serve(async (req: Request): Promise<Response> => {
                 </p>
                 
                 <div style="text-align: center; margin: 32px 0;">
-                  <a href="${siteUrl}/posts" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  <a href="${siteUrl}/posts" style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                     Browse All Posts
                   </a>
                 </div>
@@ -91,9 +96,9 @@ serve(async (req: Request): Promise<Response> => {
                   You're receiving this because you subscribed to Kerem's Blog.
                 </p>
                 <p style="margin: 0; color: #718096; font-size: 13px; text-align: center;">
-                  <a href="${siteUrl}/settings" style="color: #667eea; text-decoration: none;">Manage preferences</a>
+                  <a href="${siteUrl}/settings" style="color: #16a34a; text-decoration: none;">Manage preferences</a>
                   &nbsp;|&nbsp;
-                  <a href="${siteUrl}" style="color: #667eea; text-decoration: none;">Visit blog</a>
+                  <a href="${siteUrl}" style="color: #16a34a; text-decoration: none;">Visit blog</a>
                 </p>
               </td>
             </tr>
@@ -117,3 +122,4 @@ serve(async (req: Request): Promise<Response> => {
     );
   }
 });
+
