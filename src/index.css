@@ -1,0 +1,381 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Knowledge Flow Design System - Notion-inspired soft aesthetic */
+
+@layer base {
+  :root {
+    /* Primary - Soft sage/mint tones */
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Backgrounds - Warm, soft tones */
+    --background: 30 20% 99%;
+    --foreground: 24 10% 10%;
+    
+    /* Cards */
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 10%;
+    
+    /* Popovers */
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 10%;
+    
+    /* Secondary - Warm gray */
+    --secondary: 30 10% 96%;
+    --secondary-foreground: 24 10% 20%;
+    
+    /* Muted - Soft neutral */
+    --muted: 30 10% 96%;
+    --muted-foreground: 24 5% 45%;
+    
+    /* Accent - Soft sage */
+    --accent: 142 40% 95%;
+    --accent-foreground: 142 76% 26%;
+    
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders - Soft warm gray */
+    --border: 30 10% 90%;
+    --input: 30 10% 90%;
+    --ring: 142 76% 36%;
+    
+    --radius: 0.75rem;
+    
+    /* Sidebar */
+    --sidebar-background: 30 15% 98%;
+    --sidebar-foreground: 24 10% 10%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 40% 95%;
+    --sidebar-accent-foreground: 142 76% 26%;
+    --sidebar-border: 30 10% 90%;
+    --sidebar-ring: 142 76% 36%;
+    
+    /* Chart colors */
+    --chart-1: 142 76% 36%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 280 65% 60%;
+    --chart-4: 43 96% 56%;
+    --chart-5: 0 72% 51%;
+    
+    /* Category accent colors */
+    --accent-blue: 214 95% 93%;
+    --accent-purple: 270 91% 96%;
+    --accent-amber: 48 96% 89%;
+    --accent-rose: 0 86% 94%;
+    --accent-cyan: 183 90% 94%;
+    --accent-sage: 142 40% 90%;
+    
+    /* Custom shadows */
+    --shadow-soft: 0 2px 8px -2px hsl(24 10% 10% / 0.08), 0 4px 16px -4px hsl(24 10% 10% / 0.06);
+    --shadow-medium: 0 4px 12px -2px hsl(24 10% 10% / 0.1), 0 8px 24px -4px hsl(24 10% 10% / 0.08);
+    --shadow-glow: 0 0 24px hsl(142 76% 36% / 0.15);
+    
+    /* Font families */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  .dark {
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --background: 24 10% 10%;
+    --foreground: 30 20% 98%;
+    
+    --card: 24 8% 14%;
+    --card-foreground: 30 20% 98%;
+    
+    --popover: 24 8% 14%;
+    --popover-foreground: 30 20% 98%;
+    
+    --secondary: 24 8% 18%;
+    --secondary-foreground: 30 20% 98%;
+    
+    --muted: 24 8% 18%;
+    --muted-foreground: 24 5% 60%;
+    
+    --accent: 142 30% 20%;
+    --accent-foreground: 142 70% 70%;
+    
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 24 8% 20%;
+    --input: 24 8% 20%;
+    --ring: 142 70% 45%;
+    
+    --sidebar-background: 24 10% 8%;
+    --sidebar-foreground: 30 20% 98%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 30% 20%;
+    --sidebar-accent-foreground: 142 70% 70%;
+    --sidebar-border: 24 8% 20%;
+    --sidebar-ring: 142 70% 45%;
+    
+    --chart-1: 142 70% 55%;
+    --chart-2: 199 80% 55%;
+    --chart-3: 280 55% 65%;
+    --chart-4: 43 90% 60%;
+    --chart-5: 0 65% 55%;
+    
+    --accent-blue: 214 60% 25%;
+    --accent-purple: 270 50% 25%;
+    --accent-amber: 48 60% 25%;
+    --accent-rose: 0 50% 25%;
+    --accent-cyan: 183 50% 25%;
+    --accent-sage: 142 30% 25%;
+    
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3), 0 4px 16px -4px hsl(0 0% 0% / 0.25);
+    --shadow-medium: 0 4px 12px -2px hsl(0 0% 0% / 0.4), 0 8px 24px -4px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 24px hsl(142 70% 45% / 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    @apply font-semibold tracking-tight;
+  }
+
+  code, pre {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  .prose-custom {
+    @apply text-foreground leading-relaxed;
+  }
+
+  .prose-custom h1 {
+    @apply text-4xl font-bold mb-6 mt-10;
+  }
+
+  .prose-custom h2 {
+    @apply text-2xl font-semibold mb-4 mt-8;
+  }
+
+  .prose-custom h3 {
+    @apply text-xl font-semibold mb-3 mt-6;
+  }
+
+  .prose-custom p {
+    @apply mb-4 text-foreground/90;
+  }
+
+  .prose-custom a {
+    @apply text-primary underline underline-offset-2 hover:text-primary/80 transition-colors;
+  }
+
+  .prose-custom ul, .prose-custom ol {
+    @apply mb-4 pl-6;
+  }
+
+  .prose-custom li {
+    @apply mb-2;
+  }
+
+  .prose-custom ul li {
+    @apply list-disc;
+  }
+
+  .prose-custom ol li {
+    @apply list-decimal;
+  }
+
+  .prose-custom blockquote {
+    @apply border-l-4 border-primary/30 pl-4 italic my-4 text-muted-foreground;
+  }
+
+  .prose-custom pre {
+    @apply bg-secondary rounded-lg p-4 overflow-x-auto my-4;
+  }
+
+  .prose-custom code {
+    @apply bg-secondary px-1.5 py-0.5 rounded text-sm;
+  }
+
+  .prose-custom pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .prose-custom img {
+    @apply rounded-lg my-6 shadow-soft;
+  }
+
+  .prose-custom hr {
+    @apply border-border my-8;
+  }
+
+  .prose-custom table {
+    @apply w-full border-collapse my-4;
+  }
+
+  .prose-custom th, .prose-custom td {
+    @apply border border-border px-4 py-2 text-left;
+  }
+
+  .prose-custom th {
+    @apply bg-secondary font-semibold;
+  }
+
+  /* Graph node styles */
+  .graph-node {
+    @apply bg-card rounded-xl border border-border shadow-soft transition-all duration-200;
+  }
+
+  .graph-node:hover {
+    @apply shadow-medium;
+    transform: translateY(-2px);
+  }
+
+  .graph-node.selected {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Tag pill styles */
+  .tag-pill {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors;
+  }
+
+  .tag-pill-blue {
+    background-color: hsl(var(--accent-blue));
+    @apply text-blue-700 dark:text-blue-300;
+  }
+
+  .tag-pill-purple {
+    background-color: hsl(var(--accent-purple));
+    @apply text-purple-700 dark:text-purple-300;
+  }
+
+  .tag-pill-amber {
+    background-color: hsl(var(--accent-amber));
+    @apply text-amber-700 dark:text-amber-300;
+  }
+
+  .tag-pill-rose {
+    background-color: hsl(var(--accent-rose));
+    @apply text-rose-700 dark:text-rose-300;
+  }
+
+  .tag-pill-cyan {
+    background-color: hsl(var(--accent-cyan));
+    @apply text-cyan-700 dark:text-cyan-300;
+  }
+
+  .tag-pill-sage {
+    background-color: hsl(var(--accent-sage));
+    @apply text-emerald-700 dark:text-emerald-300;
+  }
+
+  /* Reading progress bar */
+  .reading-progress {
+    @apply fixed top-0 left-0 h-0.5 bg-primary z-50 transition-all duration-100;
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.4s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* React Flow custom styles */
+.react-flow__node {
+  @apply !bg-transparent;
+}
+
+.react-flow__edge-path {
+  @apply stroke-border;
+}
+
+.react-flow__controls {
+  @apply !bg-card !border-border !shadow-soft;
+}
+
+.react-flow__controls-button {
+  @apply !bg-card !border-border hover:!bg-secondary;
+}
+
+.react-flow__minimap {
+  @apply !bg-card !border-border;
+}
+
+/* Syntax highlighting adjustments */
+.hljs {
+  @apply bg-transparent;
+}
