@@ -272,54 +272,182 @@ serve(async (req: Request): Promise<Response> => {
 
       console.log(`Fetching project board for ${owner}/${repo}`);
 
-      // Use GraphQL to fetch project board - simple query that works
-      const query = `
-        query {
-          repository(owner: "${owner}", name: "${repo}") {
-            projectsV2(first: 1) {
-              nodes {
-                id
-                title
-                items(first: 100) {
-                  nodes {
-                    id
-                    content {
-                      ... on Issue {
-                        id
-                        number
-                        title
-                        state
-                        url
-                        labels(first: 5) {
-                          nodes {
+      try {
+        // GitHub Projects V2 requires GraphQL API
+        // First, find projects linked to this repository
+        const query = `
+          query($owner: String!, $repo: String!) {
+            repository(owner: $owner, name: $repo) {
+              projectsV2(first: 10) {
+                nodes {
+                  id
+                  title
+                  number
+                  items(first: 100) {
+                    nodes {
+                      id
+                      fieldValues(first: 10) {
+                        nodes {
+                          ... on ProjectV2ItemFieldSingleSelectValue {
                             name
-                            color
+                            field {
+                              ... on ProjectV2SingleSelectField {
+                                name
+                              }
+                            }
                           }
-                        }
-                        assignees(first: 5) {
-                          nodes {
-                            login
-                            avatarUrl
+                          ... on ProjectV2ItemFieldTextValue {
+                            text
+                            field {
+                              ... on ProjectV2Field {
+                                name
+                              }
+                            }
                           }
                         }
                       }
-                      ... on PullRequest {
-                        id
-                        number
-                        title
-                        state
-                        url
-                        labels(first: 5) {
-                          nodes {
-                            name
-                            color
+                      content {
+                        ... on Issue {
+                          id
+                          number
+                          title
+                          state
+                          url
+                          labels(first: 5) {
+                            nodes {
+                              name
+                              color
+                            }
+                          }
+                          assignees(first: 3) {
+                            nodes {
+                              login
+                              avatarUrl
+                            }
                           }
                         }
-                        assignees(first: 5) {
-                          nodes {
-                            login
-                            avatarUrl
+                        ... on PullRequest {
+                          id
+                          number
+                          title
+                          state
+                          url
+                          labels(first: 5) {
+                            nodes {
+                              name
+                              color
+                            }
                           }
+                          assignees(first: 3) {
+                            nodes {
+                              login
+                              avatarUrl
+                            }
+                          }
+                        }
+                        ... on DraftIssue {
+                          title
+                        }
+                      }
+                    }
+                  }
+                  fields(first: 20) {
+                    nodes {
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        name
+                        options {
+                          id
+                          name
+                          color
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            user(login: $owner) {
+              projectsV2(first: 10) {
+                nodes {
+                  id
+                  title
+                  number
+                  items(first: 100) {
+                    nodes {
+                      id
+                      fieldValues(first: 10) {
+                        nodes {
+                          ... on ProjectV2ItemFieldSingleSelectValue {
+                            name
+                            field {
+                              ... on ProjectV2SingleSelectField {
+                                name
+                              }
+                            }
+                          }
+                        }
+                      }
+                      content {
+                        ... on Issue {
+                          id
+                          number
+                          title
+                          state
+                          url
+                          repository {
+                            name
+                          }
+                          labels(first: 5) {
+                            nodes {
+                              name
+                              color
+                            }
+                          }
+                          assignees(first: 3) {
+                            nodes {
+                              login
+                              avatarUrl
+                            }
+                          }
+                        }
+                        ... on PullRequest {
+                          id
+                          number
+                          title
+                          state
+                          url
+                          repository {
+                            name
+                          }
+                          labels(first: 5) {
+                            nodes {
+                              name
+                              color
+                            }
+                          }
+                          assignees(first: 3) {
+                            nodes {
+                              login
+                              avatarUrl
+                            }
+                          }
+                        }
+                        ... on DraftIssue {
+                          title
+                        }
+                      }
+                    }
+                  }
+                  fields(first: 20) {
+                    nodes {
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        name
+                        options {
+                          id
+                          name
+                          color
                         }
                       }
                     }
@@ -328,97 +456,171 @@ serve(async (req: Request): Promise<Response> => {
               }
             }
           }
-        }
-      `;
+        `;
 
-      try {
-        console.log("Sending GraphQL query to GitHub...");
+        console.log("Sending GraphQL query for Projects V2...");
+
         const response = await fetch("https://api.github.com/graphql", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify({ 
+            query,
+            variables: { owner, repo }
+          }),
         });
-
-        console.log("GraphQL response status:", response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`GitHub GraphQL error (${response.status}):`, errorText);
-          throw new Error(`GitHub API error: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log("GraphQL result:", JSON.stringify(result, null, 2));
-
-        if (result.errors) {
-          console.error("GraphQL errors:", result.errors);
           return new Response(
-            JSON.stringify({ board: null, message: "Failed to fetch project board", errors: result.errors }),
+            JSON.stringify({ board: null, error: `GitHub API error: ${response.status}` }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        const projectNode = result.data?.repository?.projectsV2?.nodes?.[0];
-        console.log("Project node found:", !!projectNode);
+        const result = await response.json();
+        console.log("GraphQL response received");
+
+        if (result.errors) {
+          console.error("GraphQL errors:", JSON.stringify(result.errors));
+          return new Response(
+            JSON.stringify({ board: null, error: result.errors[0]?.message }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Try to find project from repository first, then from user
+        let projectNode = result.data?.repository?.projectsV2?.nodes?.[0];
         
+        // If no repo-level project, check user-level projects and filter by repo name
         if (!projectNode) {
-          console.log("No project board found for this repository");
+          const userProjects = result.data?.user?.projectsV2?.nodes || [];
+          console.log(`Found ${userProjects.length} user-level projects`);
+          
+          // Find project that matches the repo name or contains items from this repo
+          projectNode = userProjects.find((p: any) => {
+            // Check if project title contains repo name
+            if (p.title.toLowerCase().includes(repo.toLowerCase())) {
+              return true;
+            }
+            // Check if any items are from this repo
+            return p.items?.nodes?.some((item: any) => 
+              item.content?.repository?.name?.toLowerCase() === repo.toLowerCase()
+            );
+          });
+          
+          // If still no match, just use the first project that has the repo name in title
+          if (!projectNode) {
+            projectNode = userProjects.find((p: any) => 
+              p.title.toLowerCase().includes(repo.toLowerCase())
+            );
+          }
+        }
+
+        if (!projectNode) {
+          console.log("No matching project found for repo:", repo);
           return new Response(
             JSON.stringify({ board: null }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        // Create columns - for now group by state (open/closed) or create a single column
-        const columns: Record<string, any> = {
-          "Open": {
-            id: "open",
-            name: "Open",
-            color: "BLUE",
+        console.log("Found project:", projectNode.title);
+
+        // Find the Status field and its options
+        const statusField = projectNode.fields?.nodes?.find(
+          (f: any) => f.name?.toLowerCase() === "status"
+        );
+
+        const statusOptions = statusField?.options || [];
+        console.log("Status options:", statusOptions.map((o: any) => o.name).join(", "));
+
+        // Create columns based on status options
+        const columns: Record<string, any> = {};
+        
+        // Initialize columns from status field options
+        statusOptions.forEach((option: any) => {
+          columns[option.name] = {
+            id: option.id,
+            name: option.name,
+            color: option.color || "GRAY",
             items: [],
-          },
-          "Closed": {
-            id: "closed",
-            name: "Closed",
-            color: "GREEN",
-            items: [],
-          },
+          };
+        });
+
+        // Add a "No Status" column for items without status
+        columns["No Status"] = {
+          id: "no-status",
+          name: "No Status",
+          color: "GRAY",
+          items: [],
         };
 
-        projectNode.items.nodes.forEach((item: any) => {
-          if (item.content) {
-            const state = item.content.state === "OPEN" ? "Open" : "Closed";
-            columns[state].items.push({
+        // Process items and assign to columns
+        projectNode.items?.nodes?.forEach((item: any) => {
+          // Find the status value for this item
+          const statusValue = item.fieldValues?.nodes?.find(
+            (fv: any) => fv.field?.name?.toLowerCase() === "status"
+          );
+          
+          const status = statusValue?.name || "No Status";
+          
+          // Make sure the column exists
+          if (!columns[status]) {
+            columns[status] = {
+              id: status.toLowerCase().replace(/\s+/g, "-"),
+              name: status,
+              color: "GRAY",
+              items: [],
+            };
+          }
+
+          // Only add items that have content (issues/PRs)
+          if (item.content && (item.content.title || item.content.number)) {
+            columns[status].items.push({
               id: item.id,
-              status: state,
+              status,
               content: {
-                id: item.content.id,
-                number: item.content.number,
-                title: item.content.title,
-                state: item.content.state,
-                url: item.content.url,
-                labels: {
-                  nodes: item.content.labels?.nodes || [],
-                },
-                assignees: {
-                  nodes: item.content.assignees?.nodes || [],
-                },
+                id: item.content.id || item.id,
+                number: item.content.number || 0,
+                title: item.content.title || "Draft",
+                state: item.content.state || "OPEN",
+                url: item.content.url || "",
+                labels: item.content.labels || { nodes: [] },
+                assignees: item.content.assignees || { nodes: [] },
               },
             });
           }
         });
 
+        // Remove empty "No Status" column if it has no items
+        if (columns["No Status"].items.length === 0) {
+          delete columns["No Status"];
+        }
+
+        // Convert to array and sort by a predefined order
+        const columnOrder = ["Backlog", "Ready", "In Progress", "In progress", "In Review", "In review", "Done"];
+        const sortedColumns = Object.values(columns).sort((a: any, b: any) => {
+          const aIndex = columnOrder.findIndex(c => c.toLowerCase() === a.name.toLowerCase());
+          const bIndex = columnOrder.findIndex(c => c.toLowerCase() === b.name.toLowerCase());
+          if (aIndex === -1 && bIndex === -1) return 0;
+          if (aIndex === -1) return 1;
+          if (bIndex === -1) return -1;
+          return aIndex - bIndex;
+        });
+
         const board = {
           title: projectNode.title,
-          columns: Object.values(columns).filter((col: any) => col.items.length > 0),
+          columns: sortedColumns,
         };
 
-        console.log("Board created with", board.columns.length, "columns");
-        console.log("Total items:", board.columns.reduce((sum: number, col: any) => sum + col.items.length, 0));
-        
+        console.log("Board created successfully:");
+        console.log("- Title:", board.title);
+        console.log("- Columns:", sortedColumns.map((c: any) => `${c.name} (${c.items.length} items)`).join(", "));
+
         return new Response(
           JSON.stringify({ board }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
