@@ -155,7 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (data) setSubscription(data);
   };
 
-  const sendWelcomeEmail = async (email: string, username?: string) => {
+  const sendWelcomeEmail = async (email: string, username?: string, verificationUrl?: string) => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -171,7 +171,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           'Content-Type': 'application/json',
           'apikey': supabaseAnonKey,
         },
-        body: JSON.stringify({ email, name: username }),
+        body: JSON.stringify({ 
+          email, 
+          name: username,
+          verificationUrl: verificationUrl || `${window.location.origin}/auth?tab=login`
+        }),
       });
 
       if (!response.ok) {
@@ -190,7 +194,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, username: string, isGuest = false) => {
-    const redirectUrl = `${window.location.origin}/`;
+    // Use the current origin (localhost:8080) for email redirect
+    const redirectUrl = `${window.location.origin}/auth`;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

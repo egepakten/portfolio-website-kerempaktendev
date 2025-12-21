@@ -39,10 +39,16 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (!token) {
+      console.error("No GitHub token provided");
       return new Response(
         JSON.stringify({ error: "Missing GitHub token. Please set GITHUB_TOKEN secret or pass token in request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Validate token format (should start with 'ghp_' or 'github_pat_')
+    if (!token.startsWith('ghp_') && !token.startsWith('github_pat_') && !token.startsWith('gho_')) {
+      console.warn("Invalid GitHub token format:", token.substring(0, 10) + "...");
     }
 
     // For list_repos, owner and repo are not required
@@ -67,7 +73,9 @@ serve(async (req: Request): Promise<Response> => {
       });
 
       if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`GitHub API error (${response.status}):`, errorText);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
       }
 
       const repos = await response.json();
@@ -106,7 +114,23 @@ serve(async (req: Request): Promise<Response> => {
       });
 
       if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.statusText}`);
+        if (response.status === 404) {
+          console.warn(`Repository not found: ${owner}/${repo}`);
+          return new Response(
+            JSON.stringify({ languages: {} }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (response.status === 401) {
+          console.error("GitHub API authentication failed - invalid or expired token");
+          return new Response(
+            JSON.stringify({ error: "GitHub authentication failed. Please check your GitHub token." }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await response.text();
+        console.error(`GitHub API error (${response.status}):`, errorText);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
       }
 
       const languages = await response.json();
@@ -156,10 +180,23 @@ serve(async (req: Request): Promise<Response> => {
       });
 
       if (!response.ok) {
-        return new Response(
-          JSON.stringify({ readme: null }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        if (response.status === 404) {
+          console.warn(`README not found for: ${owner}/${repo}`);
+          return new Response(
+            JSON.stringify({ readme: null }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (response.status === 401) {
+          console.error("GitHub API authentication failed - invalid or expired token");
+          return new Response(
+            JSON.stringify({ error: "GitHub authentication failed. Please check your GitHub token." }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await response.text();
+        console.error(`GitHub API error (${response.status}):`, errorText);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
       }
 
       const readme = await response.text();
@@ -187,9 +224,15 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error: any) {
     console.error("Error in github-api:", error);
+    const errorMessage = error?.message || error?.toString() || "Unknown error";
+    const statusCode = error?.status || 500;
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        error: errorMessage,
+        details: error?.toString?.() 
+      }),
+      { status: statusCode, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

@@ -13,6 +13,7 @@ const corsHeaders = {
 interface WelcomeEmailRequest {
   email: string;
   name?: string;
+  verificationUrl?: string;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -25,12 +26,13 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name }: WelcomeEmailRequest = await req.json();
+    const { email, name, verificationUrl }: WelcomeEmailRequest = await req.json();
     
     console.log(`Sending welcome email to: ${email}`);
 
     const siteUrl = Deno.env.get("SITE_URL") || "https://kerempakten.dev";
     const personalizedName = name || "there";
+    const confirmUrl = verificationUrl || `${siteUrl}/auth?tab=login`;
 
     const emailResponse = await resend.emails.send({
       from: "Kerem's Blog <noreply@kerempakten.dev>",
@@ -59,7 +61,17 @@ serve(async (req: Request): Promise<Response> => {
                 <h2 style="margin: 0 0 20px 0; color: #1a202c; font-size: 24px; font-weight: 600;">Hey ${personalizedName}!</h2>
                 
                 <p style="margin: 0 0 20px 0; color: #4a5568; font-size: 16px; line-height: 1.6;">
-                  Thank you for subscribing to my newsletter! I'm thrilled to have you join our community of curious minds.
+                  Welcome to Kerem's Blog! We're excited to have you join our community. Please verify your email address to get started.
+                </p>
+                
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${confirmUrl}" style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    ✓ Verify Email Address
+                  </a>
+                </div>
+                
+                <p style="margin: 0 0 24px 0; color: #718096; font-size: 14px; line-height: 1.6; text-align: center;">
+                  If you didn't create this account, you can safely ignore this email.
                 </p>
                 
                 <div style="background-color: #f0fdf4; border-radius: 12px; padding: 24px; margin: 24px 0;">
@@ -70,16 +82,6 @@ serve(async (req: Request): Promise<Response> => {
                     <li>🔍 Deep dives into interesting topics</li>
                     <li>🎯 No spam, just valuable content</li>
                   </ul>
-                </div>
-                
-                <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 16px; line-height: 1.6;">
-                  While you're here, why not check out some of our latest posts?
-                </p>
-                
-                <div style="text-align: center; margin: 32px 0;">
-                  <a href="${siteUrl}/posts" style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                    Browse All Posts
-                  </a>
                 </div>
                 
                 <p style="margin: 24px 0 0 0; color: #4a5568; font-size: 16px; line-height: 1.6;">
