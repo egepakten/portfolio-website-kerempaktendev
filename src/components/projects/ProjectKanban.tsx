@@ -69,18 +69,15 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
     console.log("Token available:", !!token);
     console.log("Repo:", `${repoOwner}/${repoName}`);
     
-    if (!token) {
-      console.log("No token available, skipping fetch");
-      setIsLoading(false);
-      return;
-    }
+    setIsLoading(true);
+    setError(null);
 
     try {
       console.log("Invoking github-api function with action: get_project_board");
       const { data, error: fetchError } = await supabase.functions.invoke('github-api', {
         body: {
           action: 'get_project_board',
-          token,
+          ...(token && { token }),
           owner: repoOwner,
           repo: repoName,
         },
@@ -91,9 +88,11 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
       if (fetchError) {
         console.error('Error fetching board:', fetchError);
         setError('Failed to fetch project board');
+        setBoard(null);
       } else if (data?.error) {
         console.error('API returned error:', data.error);
         setError(data.error);
+        setBoard(null);
       } else {
         console.log("Board data:", data?.board);
         setBoard(data?.board || null);
@@ -102,6 +101,7 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
     } catch (err) {
       console.error('Catch error:', err);
       setError('Failed to fetch project board');
+      setBoard(null);
     }
     setIsLoading(false);
   };
@@ -117,7 +117,7 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
     console.log("=== ProjectKanban: useEffect triggered ===");
     console.log("Dependencies:", { token: !!token, repoOwner, repoName });
     fetchBoard();
-  }, [token, repoOwner, repoName]);
+  }, [repoOwner, repoName]);
 
   if (isLoading) {
     return (

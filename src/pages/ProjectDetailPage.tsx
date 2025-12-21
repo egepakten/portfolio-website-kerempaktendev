@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, ExternalLink, GitBranch, FileText, GitCommit, LayoutGrid, Loader2, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -16,11 +16,14 @@ import { ProjectKanban } from '@/components/projects/ProjectKanban';
 import { LanguageBar } from '@/components/projects/LanguageBar';
 import { DailyProgressTimeline } from '@/components/projects/DailyProgressTimeline';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { project, isLoading } = useProject(id!);
-  const { token, isLoading: isTokenLoading } = useGitHubToken();
+  const { token } = useGitHubToken();
   
   const [readme, setReadme] = useState<string | null>(null);
   const [languages, setLanguages] = useState<Record<string, number>>({});
@@ -28,9 +31,18 @@ export default function ProjectDetailPage() {
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('readme');
 
+  // Redirect to auth if user is not signed in
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
   useEffect(() => {
     const fetchGitHubData = async () => {
-      if (!token || !project?.github_repo_id) {
+      // Only check for project, NOT for token
+      // The edge function will use server-side GITHUB_TOKEN
+      if (!project?.github_repo_id) {
         setIsLoadingReadme(false);
         setIsLoadingLanguages(false);
         return;
@@ -41,7 +53,8 @@ export default function ProjectDetailPage() {
           supabase.functions.invoke('github-api', {
             body: {
               action: 'get_readme',
-              token,
+              // Only include token if user is signed in, otherwise server uses GITHUB_TOKEN
+              ...(token && { token }),
               owner: project.repo_owner,
               repo: project.repo_name,
               repoId: project.github_repo_id,
@@ -50,7 +63,7 @@ export default function ProjectDetailPage() {
           supabase.functions.invoke('github-api', {
             body: {
               action: 'get_languages',
-              token,
+              ...(token && { token }),
               owner: project.repo_owner,
               repo: project.repo_name,
               repoId: project.github_repo_id,
@@ -59,7 +72,6 @@ export default function ProjectDetailPage() {
         ]);
 
         if (readmeRes.data?.readme) {
-          // Handle both string and object formats (for backward compatibility with cached data)
           const readmeContent = typeof readmeRes.data.readme === 'string' 
             ? readmeRes.data.readme 
             : readmeRes.data.readme?.content || '';
@@ -110,7 +122,6 @@ export default function ProjectDetailPage() {
   }
 
   const description = project.custom_description || project.github_description;
-  const showTokenLoading = isTokenLoading && !token;
 
   return (
     <Layout>
@@ -186,13 +197,7 @@ export default function ProjectDetailPage() {
             <CardTitle className="text-lg">Languages</CardTitle>
           </CardHeader>
           <CardContent>
-            {showTokenLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <LanguageBar languages={languages} isLoading={isLoadingLanguages} />
-            )}
+            <LanguageBar languages={languages} isLoading={isLoadingLanguages} />
           </CardContent>
         </Card>
 
@@ -221,7 +226,7 @@ export default function ProjectDetailPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <TabsContent value="readme" className="mt-0">
-                {showTokenLoading || isLoadingReadme ? (
+                {isLoadingReadme ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                   </div>
@@ -236,11 +241,7 @@ export default function ProjectDetailPage() {
                 )}
               </TabsContent>
               <TabsContent value="timeline" className="mt-0">
-                {showTokenLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : project.github_repo_id ? (
+                {project.github_repo_id ? (
                   <div className="max-h-[600px] overflow-y-auto">
                     <ProjectTimeline
                       repoOwner={project.repo_owner}
@@ -253,16 +254,10 @@ export default function ProjectDetailPage() {
                 )}
               </TabsContent>
               <TabsContent value="board" className="mt-0">
-                {showTokenLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <ProjectKanban
-                    repoOwner={project.repo_owner}
-                    repoName={project.repo_name}
-                  />
-                )}
+                <ProjectKanban
+                  repoOwner={project.repo_owner}
+                  repoName={project.repo_name}
+                />
               </TabsContent>
               <TabsContent value="progress" className="mt-0">
                 <div className="max-h-[600px] overflow-y-auto">
