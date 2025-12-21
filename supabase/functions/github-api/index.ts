@@ -86,6 +86,176 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    if (action === "get_branches") {
+      if (!owner || !repo) {
+        return new Response(
+          JSON.stringify({ error: "Missing required parameters: owner, repo" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches?per_page=100`, {
+        headers: {
+          "Authorization": `token ${token}`,
+          "Accept": "application/vnd.github.v3+json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`Repository not found: ${owner}/${repo}`);
+          return new Response(
+            JSON.stringify({ branches: [] }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (response.status === 401) {
+          console.error("GitHub API authentication failed - invalid or expired token");
+          return new Response(
+            JSON.stringify({ error: "GitHub authentication failed. Please check your GitHub token." }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await response.text();
+        console.error(`GitHub API error (${response.status}):`, errorText);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      }
+
+      const branches = await response.json();
+      return new Response(
+        JSON.stringify({ branches }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "get_commits") {
+      if (!owner || !repo) {
+        return new Response(
+          JSON.stringify({ error: "Missing required parameters: owner, repo" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const branch = body.branch || "main";
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&per_page=100`,
+        {
+          headers: {
+            "Authorization": `token ${token}`,
+            "Accept": "application/vnd.github.v3+json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`Repository or branch not found: ${owner}/${repo}/${branch}`);
+          return new Response(
+            JSON.stringify({ commits: [] }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (response.status === 401) {
+          console.error("GitHub API authentication failed - invalid or expired token");
+          return new Response(
+            JSON.stringify({ error: "GitHub authentication failed. Please check your GitHub token." }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await response.text();
+        console.error(`GitHub API error (${response.status}):`, errorText);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      }
+
+      const commitsData = await response.json();
+      const commits = commitsData.map((commit: any) => ({
+        sha: commit.sha,
+        message: commit.commit.message,
+        author_date: commit.commit.author.date,
+        html_url: commit.html_url,
+        author_name: commit.commit.author.name,
+      }));
+
+      return new Response(
+        JSON.stringify({ commits }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "get_commits_by_date") {
+      if (!owner || !repo) {
+        return new Response(
+          JSON.stringify({ error: "Missing required parameters: owner, repo" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const branch = body.branch || "main";
+      const since = body.since;
+      const until = body.until;
+
+      if (!since || !until) {
+        return new Response(
+          JSON.stringify({ error: "Missing required parameters: since, until" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&since=${since}&until=${until}&per_page=100`,
+        {
+          headers: {
+            "Authorization": `token ${token}`,
+            "Accept": "application/vnd.github.v3+json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`Repository or branch not found: ${owner}/${repo}/${branch}`);
+          return new Response(
+            JSON.stringify({ commits: [] }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (response.status === 401) {
+          console.error("GitHub API authentication failed - invalid or expired token");
+          return new Response(
+            JSON.stringify({ error: "GitHub authentication failed. Please check your GitHub token." }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await response.text();
+        console.error(`GitHub API error (${response.status}):`, errorText);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+      }
+
+      const commitsData = await response.json();
+      const commits = commitsData.map((commit: any) => ({
+        sha: commit.sha,
+        message: commit.commit.message,
+        author_date: commit.commit.author.date,
+        html_url: commit.html_url,
+        author_name: commit.commit.author.name,
+      }));
+
+      return new Response(
+        JSON.stringify({ commits }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "get_project_board") {
+      // GitHub Project Boards require GraphQL API which is more complex
+      // For now, return a message indicating no board is available
+      console.log(`Project board requested for ${owner}/${repo} - not yet implemented`);
+      return new Response(
+        JSON.stringify({ board: null, message: "GitHub Project Boards require additional setup" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "get_languages") {
       // Check cache first
       if (repoId) {
@@ -208,7 +378,7 @@ serve(async (req: Request): Promise<Response> => {
           .upsert({
             repo_id: repoId,
             cache_type: "readme",
-            data: { content: readme },
+            data: readme,
           }, { onConflict: "repo_id,cache_type" });
       }
 

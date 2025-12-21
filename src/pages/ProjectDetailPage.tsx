@@ -59,7 +59,11 @@ export default function ProjectDetailPage() {
         ]);
 
         if (readmeRes.data?.readme) {
-          setReadme(readmeRes.data.readme);
+          // Handle both string and object formats (for backward compatibility with cached data)
+          const readmeContent = typeof readmeRes.data.readme === 'string' 
+            ? readmeRes.data.readme 
+            : readmeRes.data.readme?.content || '';
+          setReadme(readmeContent);
         }
         if (langsRes.data?.languages) {
           setLanguages(langsRes.data.languages);
