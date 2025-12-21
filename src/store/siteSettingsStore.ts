@@ -15,7 +15,7 @@ interface SiteSettingsStore {
 
 export const useSiteSettingsStore = create<SiteSettingsStore>((set, get) => ({
   settings: {
-    site_name: 'Kerem Pakten',
+    site_name: 'Kerem Pakten Dev',
     site_description: 'Personal blog exploring software development, cloud architecture, and modern web technologies.',
   },
   loading: true,

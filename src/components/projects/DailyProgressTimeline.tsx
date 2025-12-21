@@ -42,13 +42,19 @@ export function DailyProgressTimeline({ projectId }: DailyProgressTimelineProps)
     const fetchProgress = async () => {
       setIsLoading(true);
       try {
+        console.log("Fetching daily progress for project:", projectId);
         const { data, error } = await supabase
           .from('daily_progress')
           .select('*')
           .eq('project_id', projectId)
           .order('date', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+        
+        console.log("Daily progress data:", data);
         
         // Type assertion for the jsonb field
         const typedData = (data || []).map(entry => ({
@@ -59,6 +65,7 @@ export function DailyProgressTimeline({ projectId }: DailyProgressTimelineProps)
         setEntries(typedData);
       } catch (error) {
         console.error('Error fetching daily progress:', error);
+        setEntries([]);
       }
       setIsLoading(false);
     };

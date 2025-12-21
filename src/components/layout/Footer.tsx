@@ -32,7 +32,7 @@ export const Footer = () => {
               <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">KP</span>
               </div>
-              <span className="font-serif text-xl font-semibold">Kerem Pakten</span>
+              <span className="font-serif text-xl font-semibold">Kerem Pakten Dev</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
               {settings.site_description}

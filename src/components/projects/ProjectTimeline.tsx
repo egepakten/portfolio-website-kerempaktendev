@@ -46,13 +46,11 @@ export function ProjectTimeline({
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
   const fetchBranches = async () => {
-    if (!token) return;
-
     try {
       const { data, error } = await supabase.functions.invoke('github-api', {
         body: {
           action: 'get_branches',
-          token,
+          ...(token && { token }),
           owner: repoOwner,
           repo: repoName,
         },
@@ -76,7 +74,7 @@ export function ProjectTimeline({
   };
 
   const fetchCommits = async (forceRefresh = false) => {
-    if (!token || !repoId) {
+    if (!repoId) {
       setIsLoading(false);
       return;
     }
@@ -89,7 +87,7 @@ export function ProjectTimeline({
       const { data, error } = await supabase.functions.invoke('github-api', {
         body: {
           action: 'get_commits',
-          token,
+          ...(token && { token }),
           owner: repoOwner,
           repo: repoName,
           repoId,
@@ -117,7 +115,7 @@ export function ProjectTimeline({
 
   useEffect(() => {
     fetchBranches();
-  }, [token, repoOwner, repoName]);
+  }, [repoOwner, repoName]);
 
   useEffect(() => {
     if (selectedBranch) {

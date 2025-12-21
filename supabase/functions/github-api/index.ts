@@ -766,6 +766,117 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    if (action === "get_commits_by_date") {
+      if (!owner || !repo) {
+        return new Response(
+          JSON.stringify({ error: "Missing owner or repo", commits: [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const branch = body.branch || "main";
+      const since = body.since;
+      const until = body.until;
+
+      if (!since || !until) {
+        return new Response(
+          JSON.stringify({ error: "Missing since or until date", commits: [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/commits?sha=${branch}&since=${since}&until=${until}&per_page=100`,
+          {
+            headers: {
+              "Authorization": `token ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "User-Agent": "KeremPaktenDev-Portfolio",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.warn(`Commits not found for ${owner}/${repo}/${branch}`);
+          return new Response(
+            JSON.stringify({ commits: [] }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const commitsData = await response.json();
+        const commits = commitsData.map((commit: any) => ({
+          sha: commit.sha,
+          message: commit.commit.message,
+          author_date: commit.commit.author.date,
+          html_url: commit.html_url,
+          author_name: commit.commit.author.name,
+        }));
+
+        return new Response(
+          JSON.stringify({ commits }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("Error fetching commits by date:", error);
+        return new Response(
+          JSON.stringify({ commits: [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    if (action === "get_commit_details") {
+      if (!owner || !repo || !body.sha) {
+        return new Response(
+          JSON.stringify({ error: "Missing owner, repo, or sha", files: [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/commits/${body.sha}`,
+          {
+            headers: {
+              "Authorization": `token ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "User-Agent": "KeremPaktenDev-Portfolio",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.warn(`Commit details not found for ${owner}/${repo}/${body.sha}`);
+          return new Response(
+            JSON.stringify({ files: [] }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const commitData = await response.json();
+        const files = (commitData.files || []).map((file: any) => ({
+          filename: file.filename,
+          status: file.status,
+          additions: file.additions,
+          deletions: file.deletions,
+          patch_url: file.patch,
+        }));
+
+        return new Response(
+          JSON.stringify({ files }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("Error fetching commit details:", error);
+        return new Response(
+          JSON.stringify({ files: [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     return new Response(
       JSON.stringify({ error: "Unknown action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
