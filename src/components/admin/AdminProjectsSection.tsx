@@ -139,7 +139,7 @@ export function AdminProjectsSection() {
       github_repo_id: repo.id,
       repo_name: repo.name,
       repo_url: repo.html_url,
-      repo_owner: repo.owner,
+      repo_owner: repo.owner.login,
       github_description: repo.description,
       is_visible: false,
       hashtags: [],
