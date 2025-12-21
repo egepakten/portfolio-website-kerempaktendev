@@ -17,6 +17,9 @@ interface GitHubRequest {
 }
 
 serve(async (req: Request): Promise<Response> => {
+  console.log("=== GitHub API Edge Function Called ===");
+  console.log("Method:", req.method);
+  
   if (req.method === "OPTIONS") {
     return new Response("ok", { 
       status: 200,
@@ -26,10 +29,20 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const body = await req.json();
+    console.log("Request body:", JSON.stringify(body, null, 2));
+    
     const { action, token: bodyToken, owner, repo, repoId } = body;
     
-    // Use token from body or from environment variable
+    // Log what we received
+    console.log("Action:", action);
+    console.log("Token provided:", bodyToken ? "Yes (from body)" : "No");
+    console.log("Owner:", owner);
+    console.log("Repo:", repo);
+    
     const token = bodyToken || Deno.env.get("GITHUB_TOKEN");
+    console.log("Final token source:", bodyToken ? "body" : "env");
+    console.log("Token exists:", !!token);
+    console.log("Token preview:", token ? `${token.substring(0, 15)}...` : "MISSING");
 
     if (!action) {
       return new Response(
@@ -41,7 +54,10 @@ serve(async (req: Request): Promise<Response> => {
     if (!token) {
       console.error("No GitHub token provided");
       return new Response(
-        JSON.stringify({ error: "Missing GitHub token. Please set GITHUB_TOKEN secret or pass token in request body" }),
+        JSON.stringify({ 
+          error: "Missing GitHub token. Please set GITHUB_TOKEN secret or pass token in request body",
+          hint: "Add GITHUB_TOKEN to Supabase Secrets"
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -247,13 +263,173 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (action === "get_project_board") {
-      // GitHub Project Boards require GraphQL API which is more complex
-      // For now, return a message indicating no board is available
-      console.log(`Project board requested for ${owner}/${repo} - not yet implemented`);
-      return new Response(
-        JSON.stringify({ board: null, message: "GitHub Project Boards require additional setup" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (!owner || !repo) {
+        return new Response(
+          JSON.stringify({ error: "Missing required parameters: owner, repo" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`Fetching project board for ${owner}/${repo}`);
+
+      // Use GraphQL to fetch project board - simple query that works
+      const query = `
+        query {
+          repository(owner: "${owner}", name: "${repo}") {
+            projectsV2(first: 1) {
+              nodes {
+                id
+                title
+                items(first: 100) {
+                  nodes {
+                    id
+                    content {
+                      ... on Issue {
+                        id
+                        number
+                        title
+                        state
+                        url
+                        labels(first: 5) {
+                          nodes {
+                            name
+                            color
+                          }
+                        }
+                        assignees(first: 5) {
+                          nodes {
+                            login
+                            avatarUrl
+                          }
+                        }
+                      }
+                      ... on PullRequest {
+                        id
+                        number
+                        title
+                        state
+                        url
+                        labels(first: 5) {
+                          nodes {
+                            name
+                            color
+                          }
+                        }
+                        assignees(first: 5) {
+                          nodes {
+                            login
+                            avatarUrl
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      try {
+        console.log("Sending GraphQL query to GitHub...");
+        const response = await fetch("https://api.github.com/graphql", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query }),
+        });
+
+        console.log("GraphQL response status:", response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`GitHub GraphQL error (${response.status}):`, errorText);
+          throw new Error(`GitHub API error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("GraphQL result:", JSON.stringify(result, null, 2));
+
+        if (result.errors) {
+          console.error("GraphQL errors:", result.errors);
+          return new Response(
+            JSON.stringify({ board: null, message: "Failed to fetch project board", errors: result.errors }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const projectNode = result.data?.repository?.projectsV2?.nodes?.[0];
+        console.log("Project node found:", !!projectNode);
+        
+        if (!projectNode) {
+          console.log("No project board found for this repository");
+          return new Response(
+            JSON.stringify({ board: null }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Create columns - for now group by state (open/closed) or create a single column
+        const columns: Record<string, any> = {
+          "Open": {
+            id: "open",
+            name: "Open",
+            color: "BLUE",
+            items: [],
+          },
+          "Closed": {
+            id: "closed",
+            name: "Closed",
+            color: "GREEN",
+            items: [],
+          },
+        };
+
+        projectNode.items.nodes.forEach((item: any) => {
+          if (item.content) {
+            const state = item.content.state === "OPEN" ? "Open" : "Closed";
+            columns[state].items.push({
+              id: item.id,
+              status: state,
+              content: {
+                id: item.content.id,
+                number: item.content.number,
+                title: item.content.title,
+                state: item.content.state,
+                url: item.content.url,
+                labels: {
+                  nodes: item.content.labels?.nodes || [],
+                },
+                assignees: {
+                  nodes: item.content.assignees?.nodes || [],
+                },
+              },
+            });
+          }
+        });
+
+        const board = {
+          title: projectNode.title,
+          columns: Object.values(columns).filter((col: any) => col.items.length > 0),
+        };
+
+        console.log("Board created with", board.columns.length, "columns");
+        console.log("Total items:", board.columns.reduce((sum: number, col: any) => sum + col.items.length, 0));
+        
+        return new Response(
+          JSON.stringify({ board }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error: any) {
+        console.error("Error fetching project board:", error);
+        return new Response(
+          JSON.stringify({ board: null, error: error.message }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     if (action === "get_languages") {

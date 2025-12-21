@@ -65,12 +65,18 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchBoard = async () => {
+    console.log("=== ProjectKanban: fetchBoard called ===");
+    console.log("Token available:", !!token);
+    console.log("Repo:", `${repoOwner}/${repoName}`);
+    
     if (!token) {
+      console.log("No token available, skipping fetch");
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log("Invoking github-api function with action: get_project_board");
       const { data, error: fetchError } = await supabase.functions.invoke('github-api', {
         body: {
           action: 'get_project_board',
@@ -80,29 +86,36 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
         },
       });
 
+      console.log("Response received:", { data, fetchError });
+
       if (fetchError) {
         console.error('Error fetching board:', fetchError);
         setError('Failed to fetch project board');
       } else if (data?.error) {
+        console.error('API returned error:', data.error);
         setError(data.error);
       } else {
+        console.log("Board data:", data?.board);
         setBoard(data?.board || null);
         setError(null);
       }
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Catch error:', err);
       setError('Failed to fetch project board');
     }
     setIsLoading(false);
   };
 
   const handleSync = async () => {
+    console.log("=== ProjectKanban: Sync button clicked ===");
     setIsSyncing(true);
     await fetchBoard();
     setIsSyncing(false);
   };
 
   useEffect(() => {
+    console.log("=== ProjectKanban: useEffect triggered ===");
+    console.log("Dependencies:", { token: !!token, repoOwner, repoName });
     fetchBoard();
   }, [token, repoOwner, repoName]);
 
@@ -120,8 +133,8 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
         <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
         <p className="text-muted-foreground mb-2">Could not load project board</p>
         <p className="text-sm text-muted-foreground mb-4">{error}</p>
-        <Button variant="outline" size="sm" onClick={handleSync}>
-          <RefreshCw className="w-4 h-4 mr-2" />
+        <Button variant="outline" size="sm" onClick={handleSync} disabled={isSyncing}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
           Retry
         </Button>
       </div>
@@ -136,6 +149,10 @@ export function ProjectKanban({ repoOwner, repoName }: ProjectKanbanProps) {
         <p className="text-sm text-muted-foreground mt-2">
           Create a Project V2 in GitHub to see your kanban board here.
         </p>
+        <Button variant="outline" size="sm" onClick={handleSync} disabled={isSyncing} className="mt-4">
+          <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
     );
   }
