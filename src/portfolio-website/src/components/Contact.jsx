@@ -32,7 +32,7 @@ const Contact = () => {
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center text-gray-900 dark:text-white">
+          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center text-white">
             <span className="text-primary font-mono mr-4">03.</span>
             Get In Touch
             <div className="ml-8 h-[1px] flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
@@ -41,8 +41,8 @@ const Contact = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Info */}
             <div>
-              <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Let's Connect</h3>
-              <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
+              <h3 className="text-2xl font-bold mb-6 text-white">Let's Connect</h3>
+              <p className="text-gray-300 mb-8 leading-relaxed">
                 I'm always open to discussing new projects, creative ideas, or
                 opportunities to be part of your visions. Whether you have a
                 question or just want to say hi, feel free to reach out!
@@ -61,7 +61,7 @@ const Contact = () => {
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                     viewport={{ once: true }}
                     whileHover={{ x: 10 }}
-                    className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-lg p-4 hover:border-primary/50 transition-all duration-300 group border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md"
+                    className="flex items-center gap-4 bg-gray-800 rounded-lg p-4 hover:border-primary/50 transition-all duration-300 group border border-gray-700 shadow-sm hover:shadow-md"
                   >
                     <span className="text-3xl">{link.icon}</span>
                     <span className="font-mono text-primary group-hover:text-green-600 transition-colors">
@@ -72,9 +72,9 @@ const Contact = () => {
               </div>
 
               {/* Decorative Element */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 shadow-sm">
                 <p className="font-mono text-primary mb-2">$ status</p>
-                <p className="text-gray-700 dark:text-gray-300">
+                <p className="text-gray-300">
                   <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2 animate-pulse" />
                   Available Immediately
                 </p>
@@ -87,7 +87,7 @@ const Contact = () => {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
-              className="bg-white dark:bg-gray-800 rounded-xl p-8 flex flex-col items-center justify-center border border-gray-100 dark:border-gray-700 shadow-sm"
+              className="bg-gray-800 rounded-xl p-8 flex flex-col items-center justify-center border border-gray-700 shadow-sm"
             >
               {/* CV Icon */}
               <div className="mb-6">
@@ -109,10 +109,10 @@ const Contact = () => {
               </div>
 
               {/* CV Info */}
-              <h3 className="text-2xl font-bold mb-3 text-center text-gray-900 dark:text-white">
+              <h3 className="text-2xl font-bold mb-3 text-center text-white">
                 Download My Resume
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 text-center mb-8 max-w-sm">
+              <p className="text-gray-400 text-center mb-8 max-w-sm">
                 Get a detailed overview of my experience, skills, and
                 qualifications in PDF format.
               </p>
