@@ -56,9 +56,9 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
   if (headings.length === 0) return null;
 
   return (
-    <nav className="sticky top-24">
-      <h4 className="font-semibold text-sm mb-4">On this page</h4>
-      <ul className="space-y-2 text-sm">
+    <nav className="sticky top-24 max-h-[calc(100vh-8rem)] flex flex-col">
+      <h4 className="font-semibold text-sm mb-4 flex-shrink-0">On this page</h4>
+      <ul className="space-y-2 text-sm overflow-y-auto flex-1 pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         {headings.map((heading) => (
           <li
             key={heading.id}
