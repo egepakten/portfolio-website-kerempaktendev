@@ -68,24 +68,10 @@ export const Footer = () => {
                 <DevToIcon className="h-4 w-4" />
               </a>
               <a
-                href="https://kerempakten.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <Globe className="h-4 w-4" />
-              </a>
-              <a
                 href="mailto:egepakten@icloud.com"
                 className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 <Mail className="h-4 w-4" />
-              </a>
-              <a
-                href="/rss.xml"
-                className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <Rss className="h-4 w-4" />
               </a>
             </div>
           </div>
