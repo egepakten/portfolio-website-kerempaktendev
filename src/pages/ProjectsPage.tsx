@@ -1,15 +1,33 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, Clock, GitCommit, FolderKanban } from 'lucide-react';
+import { Search, Calendar, Clock, GitCommit, FolderKanban, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProjects, Project } from '@/hooks/useProjects';
 import { useGitHubToken } from '@/hooks/useGitHubToken';
 import { supabase } from '@/integrations/supabase/client';
+
+const CATEGORY_FILTERS = [
+  { value: 'mini-project', label: 'Mini Project', color: 'bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30' },
+  { value: 'full-stack', label: 'Full Stack', color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30' },
+  { value: 'university', label: 'University', color: 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-500/30' },
+  { value: 'prototype', label: 'Prototype', color: 'bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30' },
+  { value: 'portfolio', label: 'Portfolio', color: 'bg-pink-500/20 text-pink-700 dark:text-pink-400 border-pink-500/30' },
+];
+
+const STATUS_FILTERS = [
+  { value: 'ongoing', label: 'Ongoing', color: 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border-cyan-500/30' },
+  { value: 'deployed', label: 'Deployed', color: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30' },
+  { value: 'in_progress', label: 'In Progress', color: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30' },
+  { value: 'testing', label: 'Testing', color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30' },
+  { value: 'paused', label: 'Paused', color: 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30' },
+  { value: 'archived', label: 'Archived', color: 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30' },
+];
 
 interface ProjectWithLanguages extends Project {
   languages?: Record<string, number>;
@@ -20,7 +38,6 @@ const getCategoryLabel = (category: string | null) => {
     'mini-project': 'Mini Project',
     'full-stack': 'Full Stack',
     'university': 'University Project',
-    'library': 'Library/Tool',
     'prototype': 'Prototype',
     'portfolio': 'Portfolio Piece',
   };
@@ -32,11 +49,22 @@ const getCategoryColor = (category: string | null) => {
     'mini-project': 'bg-purple-500/20 text-purple-700 dark:text-purple-400',
     'full-stack': 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
     'university': 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-400',
-    'library': 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
     'prototype': 'bg-amber-500/20 text-amber-700 dark:text-amber-400',
     'portfolio': 'bg-pink-500/20 text-pink-700 dark:text-pink-400',
   };
   return colors[category || 'full-stack'] || 'bg-blue-500/20 text-blue-700 dark:text-blue-400';
+};
+
+const getFilterColor = (value: string, type: 'category' | 'status') => {
+  const filters = type === 'category' ? CATEGORY_FILTERS : STATUS_FILTERS;
+  const filter = filters.find(f => f.value === value);
+  return filter?.color || 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30';
+};
+
+const getFilterLabel = (value: string, type: 'category' | 'status') => {
+  const filters = type === 'category' ? CATEGORY_FILTERS : STATUS_FILTERS;
+  const filter = filters.find(f => f.value === value);
+  return filter?.label || value;
 };
 
 const ProjectCard = ({ project }: { project: ProjectWithLanguages }) => {
@@ -159,6 +187,8 @@ const ProjectCardSkeleton = () => (
 
 export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const { projects, isLoading } = useProjects(true);
   const { token } = useGitHubToken();
   const [projectsWithLangs, setProjectsWithLangs] = useState<ProjectWithLanguages[]>([]);
@@ -209,16 +239,52 @@ export default function ProjectsPage() {
   }, [projects, token, isLoading]);
 
   const filteredProjects = useMemo(() => {
-    if (!searchQuery.trim()) return projectsWithLangs;
-    
-    const query = searchQuery.toLowerCase();
-    return projectsWithLangs.filter((project) => {
-      const nameMatch = project.repo_name.toLowerCase().includes(query);
-      const descMatch = (project.custom_description || project.github_description || '').toLowerCase().includes(query);
-      const tagMatch = project.hashtags?.some(tag => tag.toLowerCase().includes(query));
-      return nameMatch || descMatch || tagMatch;
+    let filtered = projectsWithLangs;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((project) => {
+        const nameMatch = project.repo_name.toLowerCase().includes(query);
+        const descMatch = (project.custom_description || project.github_description || '').toLowerCase().includes(query);
+        const tagMatch = project.hashtags?.some(tag => tag.toLowerCase().includes(query));
+        return nameMatch || descMatch || tagMatch;
+      });
+    }
+
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((project) => project.category === categoryFilter);
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'ongoing') {
+        filtered = filtered.filter((project) => project.is_ongoing);
+      } else {
+        filtered = filtered.filter((project) => project.status === statusFilter);
+      }
+    }
+
+    // Sort: Ongoing projects first (by timeline/initial_commit_date), then rest by newest to oldest
+    return filtered.sort((a, b) => {
+      // Ongoing projects come first
+      if (a.is_ongoing && !b.is_ongoing) return -1;
+      if (!a.is_ongoing && b.is_ongoing) return 1;
+
+      // If both are ongoing, sort by timeline (initial_commit_date or start_date, oldest first = longer timeline)
+      if (a.is_ongoing && b.is_ongoing) {
+        const dateA = a.initial_commit_date || a.start_date || a.created_at;
+        const dateB = b.initial_commit_date || b.start_date || b.created_at;
+        return new Date(dateA).getTime() - new Date(dateB).getTime();
+      }
+
+      // For non-ongoing projects, sort by newest to oldest (updated_at)
+      const dateA = a.updated_at || a.created_at;
+      const dateB = b.updated_at || b.created_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
-  }, [projectsWithLangs, searchQuery]);
+  }, [projectsWithLangs, searchQuery, categoryFilter, statusFilter]);
 
   return (
     <Layout>
@@ -238,7 +304,7 @@ export default function ProjectsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="relative mb-8"
+          className="relative mb-4"
         >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -248,6 +314,87 @@ export default function ProjectsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </motion.div>
+
+        {/* Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8 space-y-4"
+        >
+          {/* Filter Dropdowns */}
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Category Dropdown */}
+            <Select
+              value={categoryFilter}
+              onValueChange={setCategoryFilter}
+            >
+              <SelectTrigger className="w-[160px]">
+                <FolderKanban className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {CATEGORY_FILTERS.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Status Dropdown */}
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+            >
+              <SelectTrigger className="w-[160px]">
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                {STATUS_FILTERS.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Results count */}
+            <span className="text-sm text-muted-foreground ml-auto">
+              {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Active Filter Tags */}
+          {(categoryFilter !== 'all' || statusFilter !== 'all') && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Active filters:</span>
+
+              {categoryFilter !== 'all' && (
+                <Badge
+                  className={`${getFilterColor(categoryFilter, 'category')} border cursor-pointer hover:opacity-80 transition-opacity`}
+                  onClick={() => setCategoryFilter('all')}
+                >
+                  {getFilterLabel(categoryFilter, 'category')}
+                  <X className="h-3 w-3 ml-1.5" />
+                </Badge>
+              )}
+
+              {statusFilter !== 'all' && (
+                <Badge
+                  className={`${getFilterColor(statusFilter, 'status')} border cursor-pointer hover:opacity-80 transition-opacity`}
+                  onClick={() => setStatusFilter('all')}
+                >
+                  {getFilterLabel(statusFilter, 'status')}
+                  <X className="h-3 w-3 ml-1.5" />
+                </Badge>
+              )}
+            </div>
+          )}
         </motion.div>
 
         {isLoading || (projectsWithLangs.length === 0 && projects.length === 0 && !searchQuery) ? (
@@ -264,7 +411,9 @@ export default function ProjectsPage() {
             className="text-center py-16"
           >
             <p className="text-muted-foreground">
-              {searchQuery ? 'No projects match your search.' : 'No projects yet.'}
+              {searchQuery || categoryFilter !== 'all' || statusFilter !== 'all'
+                ? 'No projects match your filters.'
+                : 'No projects yet.'}
             </p>
           </motion.div>
         ) : (
