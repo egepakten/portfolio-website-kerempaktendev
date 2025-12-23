@@ -69,18 +69,8 @@ serve(async (req: Request): Promise<Response> => {
     const siteUrl = Deno.env.get("SITE_URL") || "https://kerempakten.dev";
     const postUrl = `${siteUrl}/posts/${postSlug}`;
 
-    const coverImageHtml = postCoverImage ? `
-      <tr>
-        <td style="padding: 0;">
-          <a href="${postUrl}" style="display: block;">
-            <img src="${postCoverImage}" alt="${postTitle}" style="width: 100%; height: auto; display: block;" />
-          </a>
-        </td>
-      </tr>
-    ` : '';
-
     const categoryBadge = postCategory ? `
-      <span style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+      <span style="display: inline-block; background-color: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
         ${postCategory}
       </span>
     ` : '';
@@ -118,16 +108,16 @@ serve(async (req: Request): Promise<Response> => {
             <td style="padding: 32px 30px;">
               ${categoryBadge}
 
-              <h2 style="margin: 0 0 16px 0; color: #1a202c; font-size: 26px; font-weight: 700; line-height: 1.3;">
+              <h2 style="margin: 0 0 16px 0; color: #1f2937; font-size: 26px; font-weight: 700; line-height: 1.3;">
                 ${postTitle}
               </h2>
 
-              <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 16px; line-height: 1.7;">
+              <p style="margin: 0 0 24px 0; color: #4b5563; font-size: 16px; line-height: 1.7;">
                 ${postExcerpt}
               </p>
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${postUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                <a href="${postUrl}" style="display: inline-block; background-color: #22c55e; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                   Read Full Post →
                 </a>
               </div>
@@ -200,4 +190,3 @@ serve(async (req: Request): Promise<Response> => {
     );
   }
 });
-
