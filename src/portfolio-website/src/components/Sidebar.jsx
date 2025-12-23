@@ -38,7 +38,7 @@ const Sidebar = () => {
   };
 
   return (
-    <nav className="fixed left-0 top-0 h-screen w-20 bg-navy-light/50 backdrop-blur-lg border-r border-accent-cyan/10 z-50 hidden lg:flex flex-col items-center justify-center">
+    <nav className="fixed left-0 top-0 h-screen w-20 bg-background/50 backdrop-blur-lg border-r border-border z-50 hidden lg:flex flex-col items-center justify-center">
       <div className="flex flex-col gap-8">
         {navItems.map((item) => (
           <button
@@ -46,13 +46,13 @@ const Sidebar = () => {
             onClick={() => scrollToSection(item.id)}
             className={`group relative flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-300 ${
               activeSection === item.id
-                ? "bg-accent-cyan/20 text-accent-cyan scale-110"
-                : "text-gray-600 hover:text-accent-cyan hover:bg-accent-cyan/10"
+                ? "bg-primary/20 text-primary scale-110"
+                : "text-muted-foreground hover:text-primary hover:bg-primary/10"
             }`}
             aria-label={item.label}
           >
             <span className="text-2xl">{item.icon}</span>
-            <div className="absolute left-full ml-4 px-3 py-1 bg-navy-light border border-accent-cyan/20 rounded text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+            <div className="absolute left-full ml-4 px-3 py-1 bg-popover border border-border rounded text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity text-popover-foreground">
               {item.label}
             </div>
           </button>
@@ -60,7 +60,7 @@ const Sidebar = () => {
       </div>
 
       {/* Decorative Line */}
-      <div className="absolute bottom-8 w-[2px] h-20 bg-gradient-to-t from-accent-cyan to-transparent" />
+      <div className="absolute bottom-8 w-[2px] h-20 bg-gradient-to-t from-primary to-transparent" />
     </nav>
   );
 };

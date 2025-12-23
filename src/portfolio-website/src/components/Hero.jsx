@@ -15,19 +15,19 @@ const Hero = () => {
         >
           {/* Left Content */}
           <div className="flex-1">
-            <p className="text-accent-cyan font-mono text-lg mb-6">
+            <p className="text-primary font-mono text-lg mb-6">
               Hi, my name is
             </p>
 
-            <h1 className="text-5xl lg:text-7xl font-bold mb-6 text-white">
+            <h1 className="text-5xl lg:text-7xl font-bold mb-6 text-foreground">
               Kerem Ege Pakten
             </h1>
 
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-300 mb-8">
+            <h2 className="text-2xl lg:text-3xl font-bold text-muted-foreground mb-8">
               Junior Software Engineer | Cloud & DevOps Enthusiast
             </h2>
 
-            <p className="text-gray-400 text-lg lg:text-xl max-w-2xl mb-12 leading-relaxed">
+            <p className="text-muted-foreground text-lg lg:text-xl max-w-2xl mb-12 leading-relaxed">
               Computer Science graduate from King's College London specializing in
               cloud engineering and full-stack development. Experienced with AWS,
               React, and TypeScript. Currently building Individual Cloud & AI

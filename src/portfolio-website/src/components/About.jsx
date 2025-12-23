@@ -91,7 +91,7 @@ const About = () => {
           viewport={{ once: true }}
         >
           {/* Section Header */}
-          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center text-white">
+          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center text-foreground">
             <span className="text-primary font-mono mr-4">01.</span>
             About Me
             <div className="ml-8 h-[1px] flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
@@ -114,7 +114,7 @@ const About = () => {
             </div>
 
             {/* Terminal Content */}
-            <div className="font-mono text-sm leading-loose relative z-10 min-h-[400px]">
+            <div className="font-mono text-sm leading-loose relative z-10 min-h-[400px] text-gray-100">
               {displayedLines.map((line, index) => (
                 <div key={index} className={`mb-1 ${getLineColor(terminalLines[index]?.type)}`}>
                   {line}
@@ -140,15 +140,15 @@ const About = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="flex-1 bg-gray-800 rounded-xl p-6 text-center shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-700 hover:border-primary/30 group"
+                className="flex-1 bg-card rounded-xl p-6 text-center shadow-sm hover:shadow-lg transition-all duration-300 border border-border hover:border-primary/30 group"
               >
                 <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300">
                   {stat.icon}
                 </div>
-                <div className="text-3xl font-bold text-white mb-1 group-hover:text-primary transition-colors">
+                <div className="text-3xl font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
                   {stat.number}
                 </div>
-                <div className="text-gray-400 text-sm font-medium">{stat.label}</div>
+                <div className="text-muted-foreground text-sm font-medium">{stat.label}</div>
               </motion.div>
             ))}
           </div>

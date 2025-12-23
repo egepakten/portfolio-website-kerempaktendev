@@ -20,7 +20,7 @@ const PortfolioPage = () => {
 
   return (
     <Layout>
-      <div className="relative min-h-screen bg-navy-dark text-gray-900 overflow-hidden">
+      <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
         {/* Animated Spotlight Effect */}
         <div
           className="pointer-events-none fixed inset-0 z-30 transition duration-300"
