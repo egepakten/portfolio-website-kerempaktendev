@@ -34,6 +34,7 @@ export default function ProjectDetailPage() {
   const isSubscribed = subscription?.is_active;
   const [activeHeaderId, setActiveHeaderId] = useState<string>('');
   const tocNavRef = useRef<HTMLElement>(null);
+  const isUserClickRef = useRef(false);
 
   // Extract headers from README for table of contents (skipping code blocks)
   // Also create a map of text -> unique IDs for ReactMarkdown rendering
@@ -96,8 +97,14 @@ export default function ProjectDetailPage() {
   }, [readmeHeaders, activeHeaderId]);
 
   // Auto-scroll the TOC to keep the active heading visible
+  // Skip auto-scroll if user just clicked on a TOC item
   useEffect(() => {
     if (!activeHeaderId || !tocNavRef.current) return;
+
+    // If user clicked, skip auto-scroll (flag is reset by timeout in click handler)
+    if (isUserClickRef.current) {
+      return;
+    }
 
     const activeIndex = readmeHeaders.findIndex(h => h.id === activeHeaderId);
     if (activeIndex === -1) return;
@@ -176,6 +183,12 @@ export default function ProjectDetailPage() {
 
   // Scroll to header in README (within the README container, not the whole page)
   const scrollToHeader = useCallback((headerId: string) => {
+    // Set flag to prevent TOC auto-scroll from interfering during smooth scroll
+    isUserClickRef.current = true;
+    // Keep the flag active for the duration of the smooth scroll animation
+    setTimeout(() => {
+      isUserClickRef.current = false;
+    }, 1000);
     const container = document.getElementById('readme-content');
     const element = document.getElementById(headerId);
     if (container && element) {

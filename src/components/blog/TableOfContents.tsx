@@ -15,6 +15,7 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
   const [headings, setHeadings] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
   const tocListRef = useRef<HTMLUListElement>(null);
+  const isUserClickRef = useRef(false);
 
   useEffect(() => {
     // Extract headings from markdown content
@@ -90,8 +91,14 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
   }, [headings]);
 
   // Auto-scroll the TOC list to keep the active heading visible
+  // Skip auto-scroll if user just clicked on a TOC item
   useEffect(() => {
     if (!activeId || !tocListRef.current) return;
+
+    // If user clicked, skip auto-scroll (flag is reset by timeout in click handler)
+    if (isUserClickRef.current) {
+      return;
+    }
 
     const activeIndex = headings.findIndex(h => h.id === activeId);
     if (activeIndex === -1) return;
@@ -126,6 +133,12 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
               href={`#${heading.id}`}
               onClick={(e) => {
                 e.preventDefault();
+                // Set flag to prevent TOC auto-scroll from interfering during smooth scroll
+                isUserClickRef.current = true;
+                // Keep the flag active for the duration of the smooth scroll animation
+                setTimeout(() => {
+                  isUserClickRef.current = false;
+                }, 1000);
                 const element = document.getElementById(heading.id);
                 if (element) {
                   element.scrollIntoView({ behavior: 'smooth' });
