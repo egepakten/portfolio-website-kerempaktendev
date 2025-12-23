@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Search, Calendar, Clock } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -121,15 +122,22 @@ export default function ProjectsPage() {
   // Fetch languages for all visible projects
   useEffect(() => {
     const fetchLanguages = async () => {
-      if (!token || projects.length === 0) {
-        setProjectsWithLangs(projects);
+      // Immediately show projects without languages while loading
+      if (projects.length === 0) {
+        setProjectsWithLangs([]);
         return;
       }
+
+      // Set projects immediately so they appear right away
+      setProjectsWithLangs(projects);
+
+      // Then fetch languages in the background if we have a token
+      if (!token) return;
 
       const projectsLangs = await Promise.all(
         projects.map(async (project) => {
           if (!project.github_repo_id) return project;
-          
+
           try {
             const { data } = await supabase.functions.invoke('github-api', {
               body: {
@@ -146,12 +154,15 @@ export default function ProjectsPage() {
           }
         })
       );
-      
+
       setProjectsWithLangs(projectsLangs);
     };
 
-    fetchLanguages();
-  }, [projects, token]);
+    // Only fetch when projects are loaded
+    if (!isLoading) {
+      fetchLanguages();
+    }
+  }, [projects, token, isLoading]);
 
   const filteredProjects = useMemo(() => {
     if (!searchQuery.trim()) return projectsWithLangs;
@@ -168,14 +179,23 @@ export default function ProjectsPage() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <header className="mb-8">
+        <motion.header
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <h1 className="text-4xl font-serif font-bold mb-2">Projects</h1>
           <p className="text-muted-foreground">
             A collection of my work and ongoing projects
           </p>
-        </header>
+        </motion.header>
 
-        <div className="relative mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative mb-8"
+        >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
@@ -184,26 +204,43 @@ export default function ProjectsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
-        </div>
+        </motion.div>
 
-        {isLoading ? (
+        {isLoading || (projectsWithLangs.length === 0 && projects.length === 0 && !searchQuery) ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3].map((i) => (
               <ProjectCardSkeleton key={i} />
             ))}
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="text-center py-16">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-center py-16"
+          >
             <p className="text-muted-foreground">
               {searchQuery ? 'No projects match your search.' : 'No projects yet.'}
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {filteredProjects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
+              >
+                <ProjectCard project={project} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </Layout>
