@@ -19,6 +19,7 @@ const getCategoryLabel = (category: string | null) => {
   const categories: Record<string, string> = {
     'mini-project': 'Mini Project',
     'full-stack': 'Full Stack',
+    'university': 'University Project',
     'library': 'Library/Tool',
     'prototype': 'Prototype',
     'portfolio': 'Portfolio Piece',
@@ -30,6 +31,7 @@ const getCategoryColor = (category: string | null) => {
   const colors: Record<string, string> = {
     'mini-project': 'bg-purple-500/20 text-purple-700 dark:text-purple-400',
     'full-stack': 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
+    'university': 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-400',
     'library': 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
     'prototype': 'bg-amber-500/20 text-amber-700 dark:text-amber-400',
     'portfolio': 'bg-pink-500/20 text-pink-700 dark:text-pink-400',

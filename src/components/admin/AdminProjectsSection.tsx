@@ -34,6 +34,7 @@ const PROJECT_STATUS_OPTIONS = [
 const PROJECT_CATEGORY_OPTIONS = [
   { value: 'mini-project', label: 'Mini Project', color: 'bg-purple-500/20 text-purple-700' },
   { value: 'full-stack', label: 'Full Stack', color: 'bg-blue-500/20 text-blue-700' },
+  { value: 'university', label: 'University Project', color: 'bg-indigo-500/20 text-indigo-700' },
   { value: 'library', label: 'Library/Tool', color: 'bg-emerald-500/20 text-emerald-700' },
   { value: 'prototype', label: 'Prototype', color: 'bg-amber-500/20 text-amber-700' },
   { value: 'portfolio', label: 'Portfolio Piece', color: 'bg-pink-500/20 text-pink-700' },
