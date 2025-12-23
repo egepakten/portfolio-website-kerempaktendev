@@ -69,6 +69,16 @@ serve(async (req: Request): Promise<Response> => {
     const siteUrl = Deno.env.get("SITE_URL") || "https://kerempakten.dev";
     const postUrl = `${siteUrl}/posts/${postSlug}`;
 
+    const coverImageHtml = postCoverImage ? `
+      <tr>
+        <td style="padding: 0;">
+          <a href="${postUrl}" style="display: block;">
+            <img src="${postCoverImage}" alt="${postTitle}" style="width: 100%; height: auto; display: block;" />
+          </a>
+        </td>
+      </tr>
+    ` : '';
+
     const categoryBadge = postCategory ? `
       <span style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
         ${postCategory}
