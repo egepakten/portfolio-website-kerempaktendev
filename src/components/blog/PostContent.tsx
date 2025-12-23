@@ -2,12 +2,44 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 
 interface PostContentProps {
   content: string;
 }
+
+// Generate slug from heading text (must match TableOfContents.tsx logic)
+const generateSlug = (text: string): string => {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+};
+
+// Extract text content from React children
+const getTextContent = (children: ReactNode): string => {
+  if (typeof children === 'string') return children;
+  if (typeof children === 'number') return String(children);
+  if (Array.isArray(children)) return children.map(getTextContent).join('');
+  if (children && typeof children === 'object' && 'props' in children) {
+    return getTextContent((children as { props: { children?: ReactNode } }).props.children);
+  }
+  return '';
+};
+
+// Custom heading components with IDs for TOC navigation
+const createHeading = (level: 1 | 2 | 3 | 4 | 5 | 6) => {
+  const HeadingComponent = ({ children }: { children?: ReactNode }) => {
+    const text = getTextContent(children);
+    const id = generateSlug(text);
+    const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+
+    return (
+      <Tag id={id} className="scroll-mt-24">
+        {children}
+      </Tag>
+    );
+  };
+  return HeadingComponent;
+};
 
 const CodeBlock = ({ children, className, ...props }: React.HTMLAttributes<HTMLElement>) => {
   const [copied, setCopied] = useState(false);
@@ -59,6 +91,12 @@ export const PostContent = ({ content }: PostContentProps) => {
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
         components={{
+          h1: createHeading(1),
+          h2: createHeading(2),
+          h3: createHeading(3),
+          h4: createHeading(4),
+          h5: createHeading(5),
+          h6: createHeading(6),
           code: CodeBlock,
           a: ({ href, children }) => (
             <a href={href} target="_blank" rel="noopener noreferrer">

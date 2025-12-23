@@ -66,6 +66,15 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
           >
             <a
               href={`#${heading.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                const element = document.getElementById(heading.id);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                  // Update URL hash without jumping
+                  window.history.pushState(null, '', `#${heading.id}`);
+                }
+              }}
               className={`block py-1 transition-colors ${
                 activeId === heading.id
                   ? 'text-primary font-medium'
