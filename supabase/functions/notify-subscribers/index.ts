@@ -69,16 +69,6 @@ serve(async (req: Request): Promise<Response> => {
     const siteUrl = Deno.env.get("SITE_URL") || "https://kerempakten.dev";
     const postUrl = `${siteUrl}/posts/${postSlug}`;
 
-    const coverImageHtml = postCoverImage ? `
-      <tr>
-        <td style="padding: 0;">
-          <a href="${postUrl}" style="display: block;">
-            <img src="${postCoverImage}" alt="${postTitle}" style="width: 100%; height: auto; display: block;" />
-          </a>
-        </td>
-      </tr>
-    ` : '';
-
     const categoryBadge = postCategory ? `
       <span style="display: inline-block; background-color: #16a34a; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
         ${postCategory}
@@ -94,45 +84,53 @@ serve(async (req: Request): Promise<Response> => {
         <title>${postTitle}</title>
       </head>
       <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-          <!-- Header -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0;">
+          <!-- Header - Light mint green background -->
           <tr>
-            <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">New Post Published! 📝</h1>
+            <td style="padding: 40px 30px; text-align: center; background-color: #dcfce7;">
+              <h1 style="margin: 0; color: #166534; font-size: 24px; font-weight: 700;">New Post Published! 📝</h1>
             </td>
           </tr>
-          
-          <!-- Cover Image -->
-          ${coverImageHtml}
-          
+
+          <!-- Cover Image with rounded corners -->
+          ${postCoverImage ? `
+          <tr>
+            <td style="padding: 24px 30px 0 30px;">
+              <a href="${postUrl}" style="display: block;">
+                <img src="${postCoverImage}" alt="${postTitle}" style="width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid #e2e8f0;" />
+              </a>
+            </td>
+          </tr>
+          ` : ''}
+
           <!-- Main Content -->
           <tr>
-            <td style="padding: 40px 30px;">
+            <td style="padding: 32px 30px;">
               ${categoryBadge}
-              
-              <h2 style="margin: 0 0 16px 0; color: #1a202c; font-size: 28px; font-weight: 700; line-height: 1.3;">
+
+              <h2 style="margin: 0 0 16px 0; color: #1a202c; font-size: 26px; font-weight: 700; line-height: 1.3;">
                 ${postTitle}
               </h2>
-              
-              <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 16px; line-height: 1.6;">
+
+              <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 16px; line-height: 1.7;">
                 ${postExcerpt}
               </p>
-              
+
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${postUrl}" style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  Read Full Post
+                <a href="${postUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  Read Full Post →
                 </a>
               </div>
             </td>
           </tr>
-          
-          <!-- Footer -->
+
+          <!-- Footer - Light background -->
           <tr>
-            <td style="padding: 24px 30px; background-color: #f7fafc; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0 0 8px 0; color: #718096; font-size: 13px; text-align: center;">
+            <td style="padding: 24px 30px; background-color: #f8fafc; border-top: 1px solid #e2e8f0;">
+              <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px; text-align: center;">
                 You're receiving this because you subscribed to Kerem's Blog.
               </p>
-              <p style="margin: 0; color: #718096; font-size: 13px; text-align: center;">
+              <p style="margin: 0; color: #64748b; font-size: 13px; text-align: center;">
                 <a href="${siteUrl}/settings" style="color: #16a34a; text-decoration: none;">Manage preferences</a>
                 &nbsp;|&nbsp;
                 <a href="${siteUrl}" style="color: #16a34a; text-decoration: none;">Visit blog</a>

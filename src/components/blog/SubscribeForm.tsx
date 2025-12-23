@@ -1,16 +1,17 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 interface SubscribeFormProps {
   variant?: 'default' | 'compact' | 'hero';
 }
 
 export const SubscribeForm = ({ variant = 'default' }: SubscribeFormProps) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,64 +29,18 @@ export const SubscribeForm = ({ variant = 'default' }: SubscribeFormProps) => {
     }
 
     setIsLoading(true);
-    
-    try {
-      const subscriberEmail = email.toLowerCase().trim();
-      const subscriberName = name.trim() || null;
-      
-      // Insert new subscriber (unique constraint will handle duplicates)
-      const { error } = await supabase
-        .from('subscribers')
-        .insert({
-          email: subscriberEmail,
-          name: subscriberName,
-          is_active: true,
-        });
 
-      if (error) {
-        // Handle duplicate email (unique constraint violation)
-        if (error.code === '23505') {
-          toast.info('You are already subscribed!');
-          setIsLoading(false);
-          return;
-        }
-        throw error;
-      }
-
-      // Send welcome email
-      try {
-        const { error: welcomeError } = await supabase.functions.invoke('send-welcome-email', {
-          body: {
-            email: subscriberEmail,
-            name: subscriberName,
-          },
-        });
-
-        if (welcomeError) {
-          console.error('Failed to send welcome email:', welcomeError);
-          toast.warning('Subscribed, but we could not send the welcome email yet.');
-        }
-      } catch (emailError) {
-        console.error('Failed to send welcome email:', emailError);
-        toast.warning('Subscribed, but we could not send the welcome email yet.');
-        // Don't fail subscription if email fails
-      }
-
-      setIsSuccess(true);
-      toast.success('Successfully subscribed! Check your email for a welcome message.');
-      
-      // Reset after showing success
-      setTimeout(() => {
-        setIsSuccess(false);
-        setEmail('');
-        setName('');
-      }, 3000);
-    } catch (error) {
-      console.error('Subscription error:', error);
-      toast.error('Failed to subscribe. Please try again.');
-    } finally {
-      setIsLoading(false);
+    // Redirect to signup page with pre-filled email and name
+    const params = new URLSearchParams();
+    params.set('tab', 'signup');
+    params.set('email', email.toLowerCase().trim());
+    if (name.trim()) {
+      params.set('name', name.trim());
     }
+
+    toast.info('Create an account to subscribe and get access to exclusive content!');
+    navigate(`/auth?${params.toString()}`);
+    setIsLoading(false);
   };
 
   if (variant === 'compact') {

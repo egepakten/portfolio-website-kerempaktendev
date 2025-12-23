@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
+
       if (!supabaseUrl || !supabaseAnonKey) {
         console.error('Missing Supabase configuration for welcome email');
         return;
@@ -170,9 +170,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers: {
           'Content-Type': 'application/json',
           'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
         },
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           name: username,
           verificationUrl: verificationUrl || `${window.location.origin}/auth?tab=login`
         }),
@@ -181,6 +182,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error sending welcome email:', errorData);
+      } else {
+        console.log('Welcome email sent successfully to:', email);
       }
     } catch (error) {
       console.error('Error calling send-welcome-email Edge Function:', error);

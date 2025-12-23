@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -13,17 +13,23 @@ import { Loader2, Mail, Lock, User } from 'lucide-react';
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get pre-filled values from URL params (from subscribe form)
+  const prefilledEmail = searchParams.get('email') || '';
+  const prefilledName = searchParams.get('name') || '';
+  const defaultTab = searchParams.get('tab') || 'login';
 
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // Signup form
-  const [signupEmail, setSignupEmail] = useState('');
+  // Signup form - initialize with URL params if coming from subscribe
+  const [signupEmail, setSignupEmail] = useState(prefilledEmail);
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupUsername, setSignupUsername] = useState('');
+  const [signupUsername, setSignupUsername] = useState(prefilledName);
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
@@ -31,6 +37,16 @@ const AuthPage = () => {
       navigate('/');
     }
   }, [user, navigate]);
+
+  // Update signup fields when URL params change
+  useEffect(() => {
+    if (prefilledEmail) {
+      setSignupEmail(prefilledEmail);
+    }
+    if (prefilledName) {
+      setSignupUsername(prefilledName);
+    }
+  }, [prefilledEmail, prefilledName]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +114,7 @@ const AuthPage = () => {
               <CardDescription>Sign in to like posts and leave comments</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="login">
+              <Tabs defaultValue={defaultTab}>
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="login">Login</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
