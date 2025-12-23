@@ -4,17 +4,17 @@ const Hero = () => {
   return (
     <section
       id="home"
-      className="min-h-screen flex items-center px-6 lg:px-20 relative py-20"
+      className="min-h-screen flex items-center justify-center px-6 lg:px-20 relative py-20"
     >
-      <div className="max-w-6xl w-full">
+      <div className="max-w-4xl w-full text-left">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="flex flex-col lg:flex-row items-start lg:items-center gap-12"
+          className="flex flex-col items-center"
         >
-          {/* Left Content */}
-          <div className="flex-1">
+          {/* Content */}
+          <div className="w-full">
             <p className="text-primary font-mono text-lg mb-6">
               Hi, my name is
             </p>
@@ -34,7 +34,7 @@ const Hero = () => {
               Project - while preparing for AWS Developer Associate certification.
             </p>
 
-            <div className="flex flex-wrap gap-6">
+            <div className="flex flex-wrap gap-6 justify-left">
               <motion.a
                 href="#projects"
                 whileHover={{ scale: 1.05 }}
