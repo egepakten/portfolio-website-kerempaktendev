@@ -23,6 +23,8 @@ interface CategoryNodeData {
   postCount: number;
   slug: string;
   isExpanded?: boolean;
+  isSelected?: boolean;
+  isDimmed?: boolean;
 }
 
 interface CategoryNodeProps {
@@ -81,7 +83,10 @@ export const CategoryNode = memo(({ data }: CategoryNodeProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{
+        opacity: data.isDimmed ? 0.5 : 1,
+        scale: data.isSelected ? 1.05 : 1
+      }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className={`
         px-6 py-4 rounded-xl border-2 cursor-pointer
@@ -89,6 +94,8 @@ export const CategoryNode = memo(({ data }: CategoryNodeProps) => {
         shadow-soft hover:shadow-medium transition-all duration-200
         hover:-translate-y-0.5
         min-w-[160px] text-center
+        ${data.isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
+        ${data.isDimmed ? 'opacity-50' : ''}
       `}
     >
       <Handle type="target" position={Position.Top} className="!bg-border" />

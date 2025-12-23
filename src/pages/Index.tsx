@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/blog/PostCard';
 import { SubscribeForm } from '@/components/blog/SubscribeForm';
-import { KnowledgeGraph } from '@/components/graph/KnowledgeGraph';
+import { KnowledgeMapContainer } from '@/components/graph/KnowledgeMapContainer';
 import { useBlogStore } from '@/store/blogStore';
 import { useSiteSettingsStore } from '@/store/siteSettingsStore';
 import { ArrowRight, Sparkles } from 'lucide-react';
@@ -48,13 +48,13 @@ const Index = () => {
             </p>
           </motion.div>
 
-          {/* Knowledge Graph */}
+          {/* Knowledge Map with Search */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <KnowledgeGraph />
+            <KnowledgeMapContainer />
           </motion.div>
         </div>
       </section>
