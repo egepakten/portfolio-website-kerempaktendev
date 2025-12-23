@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RefreshCw, Save, Check, Loader2, BookOpen } from 'lucide-react';
+import { RefreshCw, Save, Check, Loader2, BookOpen, GitCommit, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,14 @@ const PROJECT_STATUS_OPTIONS = [
   { value: 'paused', label: 'Paused', color: 'bg-orange-500/20 text-orange-700' },
 ];
 
+const PROJECT_CATEGORY_OPTIONS = [
+  { value: 'mini-project', label: 'Mini Project', color: 'bg-purple-500/20 text-purple-700' },
+  { value: 'full-stack', label: 'Full Stack', color: 'bg-blue-500/20 text-blue-700' },
+  { value: 'library', label: 'Library/Tool', color: 'bg-emerald-500/20 text-emerald-700' },
+  { value: 'prototype', label: 'Prototype', color: 'bg-amber-500/20 text-amber-700' },
+  { value: 'portfolio', label: 'Portfolio Piece', color: 'bg-pink-500/20 text-pink-700' },
+];
+
 export function AdminProjectsSection() {
   const { token, isLoading: isTokenLoading, saveToken } = useGitHubToken();
   const { projects, refetch: refetchProjects, isLoading: isProjectsLoading } = useProjects(false);
@@ -42,6 +50,8 @@ export function AdminProjectsSection() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [updatingOngoingId, setUpdatingOngoingId] = useState<string | null>(null);
+  const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
+  const [fetchingInitialCommitId, setFetchingInitialCommitId] = useState<string | null>(null);
 
   const handleSaveToken = async () => {
     if (!newToken.trim()) return;
@@ -126,6 +136,63 @@ export function AdminProjectsSection() {
       await refetchProjects();
     }
     setUpdatingOngoingId(null);
+  };
+
+  const updateProjectCategory = async (projectId: string, category: string) => {
+    setUpdatingCategoryId(projectId);
+    const { error } = await supabase
+      .from('projects')
+      .update({ category })
+      .eq('id', projectId);
+
+    if (error) {
+      toast({ title: 'Failed to update category', variant: 'destructive' });
+    } else {
+      await refetchProjects();
+      toast({ title: 'Category updated' });
+    }
+    setUpdatingCategoryId(null);
+  };
+
+  const fetchInitialCommit = async (project: Project) => {
+    if (!token) {
+      toast({ title: 'GitHub token required', variant: 'destructive' });
+      return;
+    }
+
+    setFetchingInitialCommitId(project.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('github-api', {
+        body: {
+          action: 'get_initial_commit',
+          token,
+          owner: project.repo_owner,
+          repo: project.repo_name,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.initial_commit_date) {
+        const { error: updateError } = await supabase
+          .from('projects')
+          .update({ initial_commit_date: data.initial_commit_date })
+          .eq('id', project.id);
+
+        if (updateError) {
+          toast({ title: 'Failed to save initial commit date', variant: 'destructive' });
+        } else {
+          await refetchProjects();
+          toast({ title: `Initial commit: ${data.initial_commit_date}` });
+        }
+      } else {
+        toast({ title: 'Could not find initial commit', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Error fetching initial commit:', error);
+      toast({ title: 'Failed to fetch initial commit', variant: 'destructive' });
+    }
+    setFetchingInitialCommitId(null);
   };
 
   const importRepo = async (repo: GitHubRepo) => {
@@ -228,63 +295,125 @@ export function AdminProjectsSection() {
               No projects imported yet. Import repositories from GitHub below.
             </p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg gap-4"
+                  className="p-4 bg-secondary/30 rounded-lg space-y-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Switch
-                      checked={project.is_visible}
-                      onCheckedChange={() => toggleProjectVisibility(project)}
-                      disabled={togglingId === project.id}
-                    />
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{project.repo_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {project.is_visible ? 'Visible' : 'Hidden'}
-                      </p>
+                  {/* Top row: visibility, name, ongoing */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Switch
+                        checked={project.is_visible}
+                        onCheckedChange={() => toggleProjectVisibility(project)}
+                        disabled={togglingId === project.id}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{project.repo_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {project.is_visible ? 'Visible' : 'Hidden'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <Switch
+                          checked={project.is_ongoing}
+                          onCheckedChange={() => toggleOngoing(project)}
+                          disabled={updatingOngoingId === project.id}
+                        />
+                        <span className="text-xs text-muted-foreground">Ongoing</span>
+                      </div>
+                      <Link to={`/admin/projects/${project.id}/daily-progress`}>
+                        <Button variant="ghost" size="sm">
+                          <BookOpen className="w-4 h-4 mr-1" />
+                          Daily Progress
+                        </Button>
+                      </Link>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="flex items-center gap-1.5 mr-2">
-                      <Switch
-                        checked={project.is_ongoing}
-                        onCheckedChange={() => toggleOngoing(project)}
-                        disabled={updatingOngoingId === project.id}
-                      />
-                      <span className="text-xs text-muted-foreground">Ongoing</span>
+
+                  {/* Bottom row: category, status, initial commit */}
+                  <div className="flex items-center justify-between gap-4 pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-3">
+                      {/* Category Selector */}
+                      <div className="flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-muted-foreground" />
+                        <Select
+                          value={project.category || 'full-stack'}
+                          onValueChange={(value) => updateProjectCategory(project.id, value)}
+                          disabled={updatingCategoryId === project.id}
+                        >
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            {updatingCategoryId === project.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <SelectValue />
+                            )}
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROJECT_CATEGORY_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <span className="flex items-center gap-2">
+                                  <span className={`w-2 h-2 rounded-full ${option.color.split(' ')[0]}`} />
+                                  {option.label}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Status Selector */}
+                      <Select
+                        value={project.status || 'in_progress'}
+                        onValueChange={(value) => updateProjectStatus(project.id, value)}
+                        disabled={updatingStatusId === project.id}
+                      >
+                        <SelectTrigger className="w-32 h-8 text-xs">
+                          {updatingStatusId === project.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <SelectValue />
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PROJECT_STATUS_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <span className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${option.color.split(' ')[0]}`} />
+                                {option.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Select
-                      value={project.status || 'in_progress'}
-                      onValueChange={(value) => updateProjectStatus(project.id, value)}
-                      disabled={updatingStatusId === project.id}
-                    >
-                      <SelectTrigger className="w-32 h-8 text-xs">
-                        {updatingStatusId === project.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <SelectValue />
-                        )}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PROJECT_STATUS_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <span className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${option.color.split(' ')[0]}`} />
-                              {option.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Link to={`/admin/projects/${project.id}/daily-progress`}>
-                      <Button variant="ghost" size="sm">
-                        <BookOpen className="w-4 h-4 mr-1" />
-                        Daily Progress
-                      </Button>
-                    </Link>
+
+                    {/* Initial Commit */}
+                    <div className="flex items-center gap-2">
+                      {project.initial_commit_date ? (
+                        <Badge variant="outline" className="text-xs">
+                          <GitCommit className="w-3 h-3 mr-1" />
+                          {new Date(project.initial_commit_date).toLocaleDateString()}
+                        </Badge>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchInitialCommit(project)}
+                          disabled={fetchingInitialCommitId === project.id || !token}
+                        >
+                          {fetchingInitialCommitId === project.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                          ) : (
+                            <GitCommit className="w-3 h-3 mr-1" />
+                          )}
+                          Fetch Initial Commit
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

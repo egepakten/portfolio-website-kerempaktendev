@@ -877,6 +877,119 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
+    if (action === "get_initial_commit") {
+      if (!owner || !repo) {
+        return new Response(
+          JSON.stringify({ error: "Missing owner or repo", initial_commit_date: null }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      try {
+        // Get the default branch first
+        const repoResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}`,
+          {
+            headers: {
+              "Authorization": `token ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "User-Agent": "KeremPaktenDev-Portfolio",
+            },
+          }
+        );
+
+        if (!repoResponse.ok) {
+          console.warn(`Repository not found: ${owner}/${repo}`);
+          return new Response(
+            JSON.stringify({ initial_commit_date: null }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const repoData = await repoResponse.json();
+        const defaultBranch = repoData.default_branch || "main";
+
+        // Get commits with pagination to find the oldest one
+        // GitHub API returns commits in reverse chronological order
+        // We need to get the last page to find the first commit
+        const firstResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/commits?sha=${defaultBranch}&per_page=1`,
+          {
+            headers: {
+              "Authorization": `token ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "User-Agent": "KeremPaktenDev-Portfolio",
+            },
+          }
+        );
+
+        if (!firstResponse.ok) {
+          console.warn(`Commits not found for ${owner}/${repo}`);
+          return new Response(
+            JSON.stringify({ initial_commit_date: null }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Check Link header for last page
+        const linkHeader = firstResponse.headers.get("Link");
+        let lastPage = 1;
+
+        if (linkHeader) {
+          const lastMatch = linkHeader.match(/page=(\d+)>; rel="last"/);
+          if (lastMatch) {
+            lastPage = parseInt(lastMatch[1], 10);
+          }
+        }
+
+        // Fetch the last page to get the initial commit
+        const lastPageResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/commits?sha=${defaultBranch}&per_page=1&page=${lastPage}`,
+          {
+            headers: {
+              "Authorization": `token ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "User-Agent": "KeremPaktenDev-Portfolio",
+            },
+          }
+        );
+
+        if (!lastPageResponse.ok) {
+          console.warn(`Could not fetch last page of commits for ${owner}/${repo}`);
+          return new Response(
+            JSON.stringify({ initial_commit_date: null }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const commits = await lastPageResponse.json();
+        if (commits && commits.length > 0) {
+          const initialCommit = commits[commits.length - 1] || commits[0];
+          const initialCommitDate = initialCommit.commit?.author?.date || initialCommit.commit?.committer?.date;
+
+          return new Response(
+            JSON.stringify({
+              initial_commit_date: initialCommitDate ? initialCommitDate.split("T")[0] : null,
+              commit_sha: initialCommit.sha,
+              commit_message: initialCommit.commit?.message
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ initial_commit_date: null }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("Error fetching initial commit:", error);
+        return new Response(
+          JSON.stringify({ initial_commit_date: null }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     return new Response(
       JSON.stringify({ error: "Unknown action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

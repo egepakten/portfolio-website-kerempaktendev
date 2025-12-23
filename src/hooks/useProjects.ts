@@ -15,6 +15,8 @@ export interface Project {
   start_date: string | null;
   is_ongoing: boolean;
   status: string;
+  category: string | null;
+  initial_commit_date: string | null;
   created_at: string;
   updated_at: string;
 }

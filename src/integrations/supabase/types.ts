@@ -439,12 +439,14 @@ export type Database = {
       }
       projects: {
         Row: {
+          category: string | null
           created_at: string
           custom_description: string | null
           github_description: string | null
           github_repo_id: number | null
           hashtags: string[] | null
           id: string
+          initial_commit_date: string | null
           is_ongoing: boolean
           is_visible: boolean
           repo_name: string
@@ -455,12 +457,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           custom_description?: string | null
           github_description?: string | null
           github_repo_id?: number | null
           hashtags?: string[] | null
           id?: string
+          initial_commit_date?: string | null
           is_ongoing?: boolean
           is_visible?: boolean
           repo_name: string
@@ -471,12 +475,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           custom_description?: string | null
           github_description?: string | null
           github_repo_id?: number | null
           hashtags?: string[] | null
           id?: string
+          initial_commit_date?: string | null
           is_ongoing?: boolean
           is_visible?: boolean
           repo_name?: string

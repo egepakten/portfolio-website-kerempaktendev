@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, Clock } from 'lucide-react';
+import { Search, Calendar, Clock, GitCommit, FolderKanban } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +15,31 @@ interface ProjectWithLanguages extends Project {
   languages?: Record<string, number>;
 }
 
+const getCategoryLabel = (category: string | null) => {
+  const categories: Record<string, string> = {
+    'mini-project': 'Mini Project',
+    'full-stack': 'Full Stack',
+    'library': 'Library/Tool',
+    'prototype': 'Prototype',
+    'portfolio': 'Portfolio Piece',
+  };
+  return categories[category || 'full-stack'] || 'Full Stack';
+};
+
+const getCategoryColor = (category: string | null) => {
+  const colors: Record<string, string> = {
+    'mini-project': 'bg-purple-500/20 text-purple-700 dark:text-purple-400',
+    'full-stack': 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
+    'library': 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
+    'prototype': 'bg-amber-500/20 text-amber-700 dark:text-amber-400',
+    'portfolio': 'bg-pink-500/20 text-pink-700 dark:text-pink-400',
+  };
+  return colors[category || 'full-stack'] || 'bg-blue-500/20 text-blue-700 dark:text-blue-400';
+};
+
 const ProjectCard = ({ project }: { project: ProjectWithLanguages }) => {
   const description = project.custom_description || project.github_description;
-  const topLanguages = project.languages 
+  const topLanguages = project.languages
     ? Object.entries(project.languages)
         .sort(([,a], [,b]) => b - a)
         .slice(0, 3)
@@ -34,8 +56,8 @@ const ProjectCard = ({ project }: { project: ProjectWithLanguages }) => {
             </h3>
             <div className="flex gap-1 flex-wrap shrink-0 ml-2">
               {project.status && (
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   className={`text-xs ${
                     project.status === 'deployed' ? 'bg-primary/20 text-primary' :
                     project.status === 'testing' ? 'bg-yellow-500/20 text-yellow-700' :
@@ -44,7 +66,7 @@ const ProjectCard = ({ project }: { project: ProjectWithLanguages }) => {
                     'bg-blue-500/20 text-blue-700'
                   }`}
                 >
-                  {project.status === 'in_progress' ? 'In Progress' : 
+                  {project.status === 'in_progress' ? 'In Progress' :
                    project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                 </Badge>
               )}
@@ -56,13 +78,23 @@ const ProjectCard = ({ project }: { project: ProjectWithLanguages }) => {
               )}
             </div>
           </div>
-          
+
+          {/* Category Badge */}
+          {project.category && (
+            <div className="mb-3">
+              <Badge className={`text-xs ${getCategoryColor(project.category)}`}>
+                <FolderKanban className="w-3 h-3 mr-1" />
+                {getCategoryLabel(project.category)}
+              </Badge>
+            </div>
+          )}
+
           {description && (
             <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-grow">
               {description}
             </p>
           )}
-          
+
           {topLanguages.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
               {topLanguages.map((lang) => (
@@ -72,7 +104,7 @@ const ProjectCard = ({ project }: { project: ProjectWithLanguages }) => {
               ))}
             </div>
           )}
-          
+
           {project.hashtags && project.hashtags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {project.hashtags.map((tag) => (
@@ -82,13 +114,23 @@ const ProjectCard = ({ project }: { project: ProjectWithLanguages }) => {
               ))}
             </div>
           )}
-          
-          {project.start_date && (
-            <div className="flex items-center text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-              <Calendar className="w-3 h-3 mr-1" />
-              Started {new Date(project.start_date).toLocaleDateString()}
-            </div>
-          )}
+
+          {/* Footer with dates */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+            {project.initial_commit_date ? (
+              <div className="flex items-center">
+                <GitCommit className="w-3 h-3 mr-1" />
+                {new Date(project.initial_commit_date).toLocaleDateString()}
+              </div>
+            ) : project.start_date ? (
+              <div className="flex items-center">
+                <Calendar className="w-3 h-3 mr-1" />
+                Started {new Date(project.start_date).toLocaleDateString()}
+              </div>
+            ) : (
+              <div />
+            )}
+          </div>
         </CardContent>
       </Card>
     </Link>
