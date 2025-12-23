@@ -67,14 +67,14 @@ const About = () => {
     }
   }, [currentLineIndex, currentCharIndex]);
 
-  const getLineColor = (type) => { 
+  const getLineColor = (type) => {
     switch (type) {
       case "command":
-        return "text-primary";
+        return "text-primary font-semibold";
       case "output":
-        return "text-gray-300";
+        return "text-gray-100";
       default:
-        return "text-gray-500";
+        return "text-gray-400";
     }
   };
 

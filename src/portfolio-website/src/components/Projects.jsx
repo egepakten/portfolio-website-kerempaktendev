@@ -183,60 +183,52 @@ const Projects = () => {
                     >
                       {/* Two Column Layout */}
                       <div className="flex flex-col lg:flex-row">
-                        {/* Left: Project Image */}
-                        {/* Left: Project Image */}
-                        <div className="lg:w-1/3 relative">
+                        {/* Left: Project Thumbnail */}
+                        <div className="lg:w-32 lg:flex-shrink-0 relative">
                           <a
-                          href={currentProject.githubLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block h-48 lg:h-72 bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden group cursor-pointer"
-                        >
-                          {currentProject.demoImage ? (
-                            <img
-                              src={currentProject.demoImage}
-                              alt={`${currentProject.title} screenshot`}
-                              className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <div className="text-4xl">🚀</div>
-                            </div>
-                          )}
-                          
-                          {/* Hover Overlay - Now with green tint */}
-                          <div className="absolute inset-0 bg-primary/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                            <div className="text-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                              <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
-                                <svg className="w-7 h-7 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" clipRule="evenodd" />
-                                </svg>
+                            href={currentProject.githubLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block h-50 lg:h-full bg-gradient-to-br from-primary/5 to-primary/10 relative overflow-hidden group cursor-pointer"
+                          >
+                            {currentProject.demoImage ? (
+                              <img
+                                src={currentProject.demoImage}
+                                alt={`${currentProject.title} screenshot`}
+                                className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <div className="text-2xl">🚀</div>
                               </div>
-                              <span className="text-white text-sm font-semibold">
-                                View on GitHub →
+                            )}
+
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-primary/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div className="absolute top-2 right-2 z-10">
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold shadow ${
+                                  currentProject.status === "PRODUCTION"
+                                    ? "bg-primary text-white"
+                                    : currentProject.status === "IN DEVELOPMENT"
+                                    ? "bg-orange-500 text-white animate-pulse"
+                                    : "bg-yellow-500 text-white"
+                                }`}
+                              >
+                                {currentProject.status === "PRODUCTION" ? "PROD" : currentProject.status === "IN DEVELOPMENT" ? "DEV" : "β"}
                               </span>
                             </div>
-                          </div>
-
-                          {/* Status Badge */}
-                          <div className="absolute top-3 right-3 z-10">
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-lg ${
-                                currentProject.status === "PRODUCTION"
-                                  ? "bg-primary text-white"
-                                  : currentProject.status === "IN DEVELOPMENT"
-                                  ? "bg-orange-500 text-white animate-pulse"
-                                  : "bg-yellow-500 text-white"
-                              }`}
-                            >
-                              {currentProject.status}
-                            </span>
-                          </div>
-                        </a>
+                          </a>
                         </div>
 
                         {/* Right: Project Info */}
-                        <div className="lg:w-3/5 flex flex-col">
+                        <div className="flex-1 flex flex-col">
                           {/* Project Header */}
                           <div className="p-6 lg:p-8 border-b border-gray-100">
                             <div className="flex items-start justify-between gap-4 mb-4">
@@ -311,25 +303,25 @@ const Projects = () => {
                             
                             {/* Code Content */}
                             <div className="flex-1 bg-gray-950 p-6 font-mono text-sm overflow-auto max-h-[300px]">
-                              <pre className="text-gray-300 leading-relaxed">
+                              <pre className="text-gray-100 leading-relaxed">
                                 <code>
                                   {currentProject.code && currentProject.code.split('\n').map((line, i) => (
                                     <div key={i} className="flex">
-                                      <span className="text-gray-600 select-none w-8 text-right mr-4">{i + 1}</span>
+                                      <span className="text-gray-500 select-none w-8 text-right mr-4">{i + 1}</span>
                                       <span className="flex-1">
                                         {line.includes('def ') || line.includes('const ') || line.includes('function') ? (
                                           <span>
-                                            <span className="text-purple-400">{line.split(' ')[0]} </span>
-                                            <span className="text-primary">{line.split(' ').slice(1).join(' ')}</span>
+                                            <span className="text-purple-400 font-medium">{line.split(' ')[0]} </span>
+                                            <span className="text-emerald-400">{line.split(' ').slice(1).join(' ')}</span>
                                           </span>
                                         ) : line.includes('return') ? (
-                                          <span className="text-purple-400">{line}</span>
+                                          <span className="text-purple-400 font-medium">{line}</span>
                                         ) : line.includes('#') || line.includes('//') ? (
-                                          <span className="text-gray-500">{line}</span>
+                                          <span className="text-gray-400 italic">{line}</span>
                                         ) : line.includes('"') || line.includes("'") ? (
-                                          <span className="text-amber-400">{line}</span>
+                                          <span className="text-amber-300">{line}</span>
                                         ) : (
-                                          <span>{line}</span>
+                                          <span className="text-gray-100">{line}</span>
                                         )}
                                       </span>
                                     </div>
