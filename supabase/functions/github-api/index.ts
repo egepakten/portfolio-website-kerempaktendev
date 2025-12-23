@@ -701,6 +701,22 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (action === "get_readme") {
+      // If forceRefresh is true, delete the cache first
+      if (forceRefresh && repoId) {
+        console.log(`Force refreshing README for ${owner}/${repo} - deleting cache first`);
+        const { error: deleteError } = await supabase
+          .from("github_cache")
+          .delete()
+          .eq("repo_id", repoId)
+          .eq("cache_type", "readme");
+
+        if (deleteError) {
+          console.error("Error deleting cache:", deleteError);
+        } else {
+          console.log("Cache deleted successfully");
+        }
+      }
+
       // Check cache first (unless forceRefresh is true)
       if (repoId && !forceRefresh) {
         const { data: cached } = await supabase
@@ -717,10 +733,6 @@ serve(async (req: Request): Promise<Response> => {
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-      }
-
-      if (forceRefresh) {
-        console.log(`Force refreshing README for ${owner}/${repo}`);
       }
 
       // Fetch from GitHub

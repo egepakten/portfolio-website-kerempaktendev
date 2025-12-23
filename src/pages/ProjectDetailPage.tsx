@@ -95,6 +95,8 @@ export default function ProjectDetailPage() {
 
     setIsSyncingReadme(true);
     try {
+      console.log('Syncing README with forceRefresh=true for:', project.repo_name);
+
       const readmeRes = await callGitHubApi({
         action: 'get_readme',
         ...(token && { token }),
@@ -102,13 +104,20 @@ export default function ProjectDetailPage() {
         repo: project.repo_name,
         repoId: project.github_repo_id,
         forceRefresh: true,
+        // Add timestamp to ensure no HTTP caching
+        _t: Date.now(),
       });
+
+      console.log('README sync response:', readmeRes);
 
       if (readmeRes.data?.readme) {
         const readmeContent = typeof readmeRes.data.readme === 'string'
           ? readmeRes.data.readme
           : readmeRes.data.readme?.content || '';
+        console.log('Updated README content length:', readmeContent.length);
         setReadme(readmeContent);
+      } else {
+        console.warn('No README content in response');
       }
     } catch (error) {
       console.error('Error syncing README:', error);
@@ -274,49 +283,49 @@ export default function ProjectDetailPage() {
           </CardContent>
         </Card>
 
-        {/* README / Timeline / Project Board Tabs */}
-        <Card>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <CardHeader className="pb-0">
-              <TabsList className="w-fit">
-                <TabsTrigger value="readme" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  README
-                </TabsTrigger>
-                <TabsTrigger value="timeline" className="flex items-center gap-2">
-                  <GitCommit className="w-4 h-4" />
-                  Timeline
-                </TabsTrigger>
-                <TabsTrigger value="board" className="flex items-center gap-2">
-                  <LayoutGrid className="w-4 h-4" />
-                  Project Board
-                </TabsTrigger>
-                {isSubscribed ? (
-                  <TabsTrigger value="progress" className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Daily Progress
+        {/* README / Timeline / Project Board Tabs - Two Column Layout */}
+        <div className="flex gap-6">
+          {/* Main Content Card */}
+          <Card className="flex-1 min-w-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <CardHeader className="pb-0">
+                <TabsList className="w-fit">
+                  <TabsTrigger value="readme" className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    README
                   </TabsTrigger>
-                ) : (
-                  <button
-                    onClick={() => navigate('/auth')}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Lock className="w-4 h-4" />
-                    Daily Progress
-                  </button>
-                )}
-              </TabsList>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <TabsContent value="readme" className="mt-0">
-                {isLoadingReadme ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : readme ? (
-                  <div className="flex gap-6">
-                    {/* README Content */}
-                    <div className="flex-1 min-w-0">
+                  <TabsTrigger value="timeline" className="flex items-center gap-2">
+                    <GitCommit className="w-4 h-4" />
+                    Timeline
+                  </TabsTrigger>
+                  <TabsTrigger value="board" className="flex items-center gap-2">
+                    <LayoutGrid className="w-4 h-4" />
+                    Project Board
+                  </TabsTrigger>
+                  {isSubscribed ? (
+                    <TabsTrigger value="progress" className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Daily Progress
+                    </TabsTrigger>
+                  ) : (
+                    <button
+                      onClick={() => navigate('/auth')}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Lock className="w-4 h-4" />
+                      Daily Progress
+                    </button>
+                  )}
+                </TabsList>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <TabsContent value="readme" className="mt-0">
+                  {isLoadingReadme ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : readme ? (
+                    <div>
                       {/* Sync Button */}
                       <div className="flex justify-end mb-4">
                         <Button
@@ -369,67 +378,69 @@ export default function ProjectDetailPage() {
                         </ReactMarkdown>
                       </div>
                     </div>
-
-                    {/* Table of Contents Sidebar */}
-                    {readmeHeaders.length > 0 && (
-                      <div className="hidden lg:block w-56 flex-shrink-0">
-                        <div className="sticky top-4">
-                          <div className="flex items-center gap-2 mb-3 text-sm font-medium text-foreground">
-                            <List className="w-4 h-4" />
-                            On this page
-                          </div>
-                          <nav className="space-y-1 max-h-[500px] overflow-y-auto">
-                            {readmeHeaders.map((header, index) => (
-                              <button
-                                key={index}
-                                onClick={() => scrollToHeader(header.id)}
-                                className={`block w-full text-left text-sm transition-colors hover:text-primary truncate ${
-                                  header.level === 1 ? 'font-medium text-foreground' :
-                                  header.level === 2 ? 'pl-3 text-muted-foreground' :
-                                  header.level === 3 ? 'pl-6 text-muted-foreground text-xs' :
-                                  'pl-9 text-muted-foreground text-xs'
-                                }`}
-                                title={header.text}
-                              >
-                                {header.text}
-                              </button>
-                            ))}
-                          </nav>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-12">No README available.</p>
-                )}
-              </TabsContent>
-              <TabsContent value="timeline" className="mt-0">
-                {project.github_repo_id ? (
+                  ) : (
+                    <p className="text-muted-foreground text-center py-12">No README available.</p>
+                  )}
+                </TabsContent>
+                <TabsContent value="timeline" className="mt-0">
+                  {project.github_repo_id ? (
+                    <div className="max-h-[600px] overflow-y-auto">
+                      <ProjectTimeline
+                        repoOwner={project.repo_owner}
+                        repoName={project.repo_name}
+                        repoId={project.github_repo_id}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-12">No timeline available.</p>
+                  )}
+                </TabsContent>
+                <TabsContent value="board" className="mt-0">
+                  <ProjectKanban
+                    repoOwner={project.repo_owner}
+                    repoName={project.repo_name}
+                  />
+                </TabsContent>
+                <TabsContent value="progress" className="mt-0">
                   <div className="max-h-[600px] overflow-y-auto">
-                    <ProjectTimeline
-                      repoOwner={project.repo_owner}
-                      repoName={project.repo_name}
-                      repoId={project.github_repo_id}
-                    />
+                    <DailyProgressTimeline projectId={project.id} />
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-12">No timeline available.</p>
-                )}
-              </TabsContent>
-              <TabsContent value="board" className="mt-0">
-                <ProjectKanban
-                  repoOwner={project.repo_owner}
-                  repoName={project.repo_name}
-                />
-              </TabsContent>
-              <TabsContent value="progress" className="mt-0">
-                <div className="max-h-[600px] overflow-y-auto">
-                  <DailyProgressTimeline projectId={project.id} />
-                </div>
-              </TabsContent>
-            </CardContent>
-          </Tabs>
-        </Card>
+                </TabsContent>
+              </CardContent>
+            </Tabs>
+          </Card>
+
+          {/* Table of Contents Card - Separate Box */}
+          {activeTab === 'readme' && readmeHeaders.length > 0 && (
+            <Card className="hidden lg:block w-64 flex-shrink-0 h-fit sticky top-8">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <List className="w-5 h-5" />
+                  On this page
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <nav className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                  {readmeHeaders.map((header, index) => (
+                    <button
+                      key={index}
+                      onClick={() => scrollToHeader(header.id)}
+                      className={`block w-full text-left transition-colors hover:text-primary py-1 ${
+                        header.level === 1 ? 'font-semibold text-foreground text-base' :
+                        header.level === 2 ? 'pl-3 text-muted-foreground text-sm hover:text-foreground' :
+                        header.level === 3 ? 'pl-6 text-muted-foreground text-sm' :
+                        'pl-9 text-muted-foreground text-xs'
+                      }`}
+                      title={header.text}
+                    >
+                      {header.text}
+                    </button>
+                  ))}
+                </nav>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </Layout>
   );
