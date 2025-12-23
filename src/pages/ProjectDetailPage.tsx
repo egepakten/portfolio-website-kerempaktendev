@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, ExternalLink, GitBranch, FileText, GitCommit, LayoutGrid, Loader2, BookOpen } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, ExternalLink, GitBranch, FileText, GitCommit, LayoutGrid, Loader2, BookOpen, Lock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Layout } from '@/components/layout/Layout';
@@ -15,28 +15,22 @@ import { ProjectTimeline } from '@/components/projects/ProjectTimeline';
 import { ProjectKanban } from '@/components/projects/ProjectKanban';
 import { LanguageBar } from '@/components/projects/LanguageBar';
 import { DailyProgressTimeline } from '@/components/projects/DailyProgressTimeline';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { subscription } = useAuth();
   const { project, isLoading } = useProject(id!);
   const { token } = useGitHubToken();
-  
+
   const [readme, setReadme] = useState<string | null>(null);
   const [languages, setLanguages] = useState<Record<string, number>>({});
   const [isLoadingReadme, setIsLoadingReadme] = useState(true);
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('readme');
 
-  // Redirect to auth if user is not signed in
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-    }
-  }, [user, navigate]);
+  const isSubscribed = subscription?.is_active;
 
   useEffect(() => {
     const fetchGitHubData = async () => {
@@ -49,31 +43,49 @@ export default function ProjectDetailPage() {
       }
 
       try {
+        // Helper function to call github-api edge function
+        // Uses direct fetch for anonymous users to avoid auth issues
+        const callGitHubApi = async (body: Record<string, unknown>) => {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+          const response = await fetch(`${supabaseUrl}/functions/v1/github-api`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': anonKey,
+              'Authorization': `Bearer ${anonKey}`,
+            },
+            body: JSON.stringify(body),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          return { data: await response.json() };
+        };
+
         const [readmeRes, langsRes] = await Promise.all([
-          supabase.functions.invoke('github-api', {
-            body: {
-              action: 'get_readme',
-              // Only include token if user is signed in, otherwise server uses GITHUB_TOKEN
-              ...(token && { token }),
-              owner: project.repo_owner,
-              repo: project.repo_name,
-              repoId: project.github_repo_id,
-            },
+          callGitHubApi({
+            action: 'get_readme',
+            ...(token && { token }),
+            owner: project.repo_owner,
+            repo: project.repo_name,
+            repoId: project.github_repo_id,
           }),
-          supabase.functions.invoke('github-api', {
-            body: {
-              action: 'get_languages',
-              ...(token && { token }),
-              owner: project.repo_owner,
-              repo: project.repo_name,
-              repoId: project.github_repo_id,
-            },
+          callGitHubApi({
+            action: 'get_languages',
+            ...(token && { token }),
+            owner: project.repo_owner,
+            repo: project.repo_name,
+            repoId: project.github_repo_id,
           }),
         ]);
 
         if (readmeRes.data?.readme) {
-          const readmeContent = typeof readmeRes.data.readme === 'string' 
-            ? readmeRes.data.readme 
+          const readmeContent = typeof readmeRes.data.readme === 'string'
+            ? readmeRes.data.readme
             : readmeRes.data.readme?.content || '';
           setReadme(readmeContent);
         }
@@ -218,10 +230,20 @@ export default function ProjectDetailPage() {
                   <LayoutGrid className="w-4 h-4" />
                   Project Board
                 </TabsTrigger>
-                <TabsTrigger value="progress" className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Daily Progress
-                </TabsTrigger>
+                {isSubscribed ? (
+                  <TabsTrigger value="progress" className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Daily Progress
+                  </TabsTrigger>
+                ) : (
+                  <button
+                    onClick={() => navigate('/auth')}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Lock className="w-4 h-4" />
+                    Daily Progress
+                  </button>
+                )}
               </TabsList>
             </CardHeader>
             <CardContent className="pt-6">
