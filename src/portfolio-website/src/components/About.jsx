@@ -100,7 +100,7 @@ const About = () => {
           {/* Terminal Card */}
           <div className="bg-gray-900 rounded-xl p-6 lg:p-8 shadow-2xl border border-gray-800 relative overflow-hidden">
             {/* Green glow effect */}
-            <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+            {/* <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" /> */}
             <div className="absolute bottom-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
             
             {/* Terminal Header */}
@@ -130,7 +130,7 @@ const About = () => {
           {/* Stats Cards - Added mt-8 for gap */}
           <div className="flex flex-col sm:flex-row gap-4 mt-12 w-full">
             {[
-              { number: projects.length.toString(), label: "Projects Completed", icon: "🚀" },
+              { number: "5+", label: "Projects Completed", icon: "🚀" },
               { number: "4+", label: "Years Experience", icon: "📅" },
               { number: "100%", label: "Commitment", icon: "🎯" },
             ].map((stat, index) => (

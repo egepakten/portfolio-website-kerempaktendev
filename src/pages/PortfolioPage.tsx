@@ -4,8 +4,6 @@ import Sidebar from '@/portfolio-website/src/components/Sidebar';
 import Hero from '@/portfolio-website/src/components/Hero';
 import About from '@/portfolio-website/src/components/About';
 import Experience from '@/portfolio-website/src/components/Experience';
-import Projects from '@/portfolio-website/src/components/Projects';
-import TechStack from '@/portfolio-website/src/components/TechStack';
 import Contact from '@/portfolio-website/src/components/Contact';
 
 const PortfolioPage = () => {
@@ -42,8 +40,6 @@ const PortfolioPage = () => {
           <Hero />
           <About />
           <Experience />
-          <Projects />
-          <TechStack />
           <Contact />
         </main>
       </div>

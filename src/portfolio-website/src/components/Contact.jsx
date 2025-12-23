@@ -33,7 +33,7 @@ const Contact = () => {
           viewport={{ once: true }}
         >
           <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center">
-            <span className="text-primary font-mono mr-4">05.</span>
+            <span className="text-primary font-mono mr-4">03.</span>
             Get In Touch
             <div className="ml-8 h-[1px] flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
           </h2>
