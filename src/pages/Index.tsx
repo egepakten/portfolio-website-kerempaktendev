@@ -40,9 +40,10 @@ const Index = () => {
               <Sparkles className="h-4 w-4" />
               <span>Navigate Knowledge Visually</span>
             </div>
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-balance">
-              Welcome to <span className="text-primary">{settings.site_name}&apos;s Blog</span>
-            </h1>
+            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-balance text-center">
+            <span className="block">Welcome to</span>
+            <span className="block text-primary">{settings.site_name}&apos;s Blog</span>
+          </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {settings.site_description}
             </p>
