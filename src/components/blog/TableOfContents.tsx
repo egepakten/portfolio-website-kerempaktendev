@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface TOCItem {
@@ -14,6 +14,7 @@ interface TableOfContentsProps {
 export const TableOfContents = ({ content }: TableOfContentsProps) => {
   const [headings, setHeadings] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
+  const tocListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     // Extract headings from markdown content
@@ -88,12 +89,34 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [headings]);
 
+  // Auto-scroll the TOC list to keep the active heading visible
+  useEffect(() => {
+    if (!activeId || !tocListRef.current) return;
+
+    const activeIndex = headings.findIndex(h => h.id === activeId);
+    if (activeIndex === -1) return;
+
+    const tocList = tocListRef.current;
+    const listItems = tocList.querySelectorAll('li');
+    const activeItem = listItems[activeIndex];
+
+    if (activeItem) {
+      const listRect = tocList.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      // Check if the active item is outside the visible area
+      if (itemRect.top < listRect.top || itemRect.bottom > listRect.bottom) {
+        activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [activeId, headings]);
+
   if (headings.length === 0) return null;
 
   return (
     <nav className="sticky top-24 max-h-[calc(100vh-8rem)] flex flex-col">
       <h4 className="font-semibold text-sm mb-4 flex-shrink-0">On this page</h4>
-      <ul className="space-y-2 text-sm overflow-y-auto flex-1 pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      <ul ref={tocListRef} className="space-y-2 text-sm overflow-y-auto flex-1 pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent scroll-smooth">
         {headings.map((heading) => (
           <li
             key={heading.id}

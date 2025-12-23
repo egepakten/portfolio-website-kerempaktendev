@@ -33,6 +33,7 @@ export default function ProjectDetailPage() {
 
   const isSubscribed = subscription?.is_active;
   const [activeHeaderId, setActiveHeaderId] = useState<string>('');
+  const tocNavRef = useRef<HTMLElement>(null);
 
   // Extract headers from README for table of contents (skipping code blocks)
   // Also create a map of text -> unique IDs for ReactMarkdown rendering
@@ -77,12 +78,44 @@ export default function ProjectDetailPage() {
   }, [readme]);
 
   // Track which heading IDs have been used during rendering
+  // Reset synchronously when readme changes by using a ref that tracks the last readme
   const usedHeadingCounts = useRef<Record<string, number>>({});
+  const lastReadmeRef = useRef<string | null>(null);
 
-  // Reset the heading counts when readme changes (before rendering)
-  useEffect(() => {
+  // Reset heading counts synchronously during render when readme changes
+  if (readme !== lastReadmeRef.current) {
     usedHeadingCounts.current = {};
-  }, [readme]);
+    lastReadmeRef.current = readme;
+  }
+
+  // Set initial active header to first one when headers are available
+  useEffect(() => {
+    if (readmeHeaders.length > 0 && !activeHeaderId) {
+      setActiveHeaderId(readmeHeaders[0].id);
+    }
+  }, [readmeHeaders, activeHeaderId]);
+
+  // Auto-scroll the TOC to keep the active heading visible
+  useEffect(() => {
+    if (!activeHeaderId || !tocNavRef.current) return;
+
+    const activeIndex = readmeHeaders.findIndex(h => h.id === activeHeaderId);
+    if (activeIndex === -1) return;
+
+    const tocNav = tocNavRef.current;
+    const buttons = tocNav.querySelectorAll('button');
+    const activeButton = buttons[activeIndex];
+
+    if (activeButton) {
+      const navRect = tocNav.getBoundingClientRect();
+      const buttonRect = activeButton.getBoundingClientRect();
+
+      // Check if the active button is outside the visible area
+      if (buttonRect.top < navRect.top || buttonRect.bottom > navRect.bottom) {
+        activeButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [activeHeaderId, readmeHeaders]);
 
   // Track active header based on scroll position within the README container
   useEffect(() => {
@@ -93,7 +126,7 @@ export default function ProjectDetailPage() {
 
     const handleScroll = () => {
       const containerRect = container.getBoundingClientRect();
-      const threshold = 20; // Distance from top of container
+      const threshold = 50; // Distance from top of container
 
       // Get all heading elements with their positions relative to the container
       const headingElements = readmeHeaders
@@ -111,7 +144,7 @@ export default function ProjectDetailPage() {
         .filter(Boolean) as { id: string; top: number }[];
 
       // Find the heading that is closest to the top but still visible or just passed
-      let activeHeading = headingElements[0]?.id || '';
+      let activeHeading = '';
 
       for (const heading of headingElements) {
         if (heading.top <= threshold) {
@@ -121,14 +154,24 @@ export default function ProjectDetailPage() {
         }
       }
 
-      setActiveHeaderId(activeHeading);
+      // If no heading has scrolled past threshold yet, use the first one
+      if (!activeHeading && headingElements.length > 0) {
+        activeHeading = headingElements[0].id;
+      }
+
+      if (activeHeading) {
+        setActiveHeaderId(activeHeading);
+      }
     };
 
-    // Initial check
-    handleScroll();
+    // Initial check with a small delay to ensure DOM is ready after ReactMarkdown renders
+    const timeoutId = setTimeout(handleScroll, 200);
 
     container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
+    return () => {
+      clearTimeout(timeoutId);
+      container.removeEventListener('scroll', handleScroll);
+    };
   }, [readmeHeaders, activeTab]);
 
   // Scroll to header in README (within the README container, not the whole page)
@@ -514,7 +557,7 @@ export default function ProjectDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <nav className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                <nav ref={tocNavRef} className="space-y-2 max-h-[500px] overflow-y-auto pr-2 scroll-smooth">
                   {readmeHeaders.map((header, index) => (
                     <button
                       key={index}
