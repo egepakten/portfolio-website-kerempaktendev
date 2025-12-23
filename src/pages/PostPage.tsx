@@ -9,19 +9,65 @@ import { PostLikes } from '@/components/blog/PostLikes';
 import { PostComments } from '@/components/blog/PostComments';
 import { useBlogStore } from '@/store/blogStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Clock, Calendar, Share2, Twitter, Linkedin, Link as LinkIcon, Hash } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Share2, Twitter, Linkedin, Link as LinkIcon, Hash, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const PostPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const getPostBySlug = useBlogStore((state) => state.getPostBySlug);
   const posts = useBlogStore((state) => state.posts);
+  const isLoading = useBlogStore((state) => state.isLoading);
   const { subscription } = useAuth();
   const isSubscribed = subscription?.is_active;
   const post = slug ? getPostBySlug(slug) : undefined;
 
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <div className="mb-8">
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
+            <div>
+              <Skeleton className="h-6 w-24 mb-4" />
+              <Skeleton className="h-12 w-full mb-4" />
+              <Skeleton className="h-12 w-3/4 mb-6" />
+              <Skeleton className="h-6 w-full mb-2" />
+              <Skeleton className="h-6 w-2/3 mb-8" />
+              <div className="flex gap-4 mb-8">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-64 w-full rounded-xl mb-12" />
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </div>
+            </div>
+            <aside className="hidden lg:block">
+              <Skeleton className="h-4 w-24 mb-4" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </aside>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show not found only after loading is complete
   if (!post) {
     return (
       <Layout>
