@@ -266,7 +266,7 @@ export default function ProjectsPage() {
       }
     }
 
-    // Sort: Ongoing projects first (by timeline/initial_commit_date), then rest by newest to oldest
+    // Sort: Ongoing projects first (by timeline/initial_commit_date), then rest by initial commit date (newest to oldest)
     return filtered.sort((a, b) => {
       // Ongoing projects come first
       if (a.is_ongoing && !b.is_ongoing) return -1;
@@ -279,9 +279,9 @@ export default function ProjectsPage() {
         return new Date(dateA).getTime() - new Date(dateB).getTime();
       }
 
-      // For non-ongoing projects, sort by newest to oldest (updated_at)
-      const dateA = a.updated_at || a.created_at;
-      const dateB = b.updated_at || b.created_at;
+      // For non-ongoing projects, sort by initial commit date (newest to oldest)
+      const dateA = a.initial_commit_date || a.start_date || a.created_at;
+      const dateB = b.initial_commit_date || b.start_date || b.created_at;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
   }, [projectsWithLangs, searchQuery, categoryFilter, statusFilter]);
