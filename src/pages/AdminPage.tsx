@@ -847,7 +847,7 @@ const AdminPage = () => {
   };
 
   const handleGenerateCoverImage = async () => {
-    if (!newPost.title) {
+    if (!newPost.title || !newPost.title.trim()) {
       toast.error('Please enter a title first');
       return;
     }
@@ -855,7 +855,9 @@ const AdminPage = () => {
     setIsGeneratingImage(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-cover-image', {
-        body: { prompt: newPost.title }
+        body: { 
+          title: newPost.title.trim()
+        }
       });
 
       if (error) throw error;
@@ -863,12 +865,65 @@ const AdminPage = () => {
       if (data.imageUrl) {
         setCoverImage(data.imageUrl);
         toast.success('Cover image generated!');
+      } else {
+        toast.error('Failed to generate image');
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to generate image';
       toast.error(message);
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    try {
+      setIsGeneratingImage(true);
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const filename = `cover-${timestamp}-${file.name}`;
+      const filepath = `posts/${filename}`;
+
+      // Upload to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('blog-images')
+        .upload(filepath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(filepath);
+
+      setCoverImage(publicUrl);
+      toast.success('Image uploaded successfully!');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to upload image';
+      toast.error(message);
+    } finally {
+      setIsGeneratingImage(false);
+      // Reset file input
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -1198,7 +1253,7 @@ const AdminPage = () => {
 
                   <div className="space-y-2">
                     <Label>Cover Image</Label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button 
                         type="button" 
                         variant="outline" 
@@ -1218,6 +1273,22 @@ const AdminPage = () => {
                           </>
                         )}
                       </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        className="flex-shrink-0"
+                        onClick={() => document.getElementById('cover-image-upload')?.click()}
+                      >
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Upload Image
+                      </Button>
+                      <input
+                        id="cover-image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleCoverImageUpload}
+                      />
                       <Input
                         value={coverImage}
                         onChange={(e) => setCoverImage(e.target.value)}
