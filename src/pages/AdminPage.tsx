@@ -1365,16 +1365,61 @@ const AdminPage = () => {
 
               {/* Preview */}
               {showPreview && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Preview</CardTitle>
+                <Card className="bg-[#171717] text-white border-0 overflow-hidden">
+                  <CardHeader className="p-0">
+                    {/* Cover Image */}
+                    {coverImage && (
+                      <div className="w-full h-32 overflow-hidden">
+                        <img
+                          src={coverImage}
+                          alt="Cover"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                   </CardHeader>
-                  <CardContent>
-                    <article className="prose prose-sm dark:prose-invert max-w-none">
-                      <h1>{newPost.title || 'Untitled'}</h1>
-                      {newPost.excerpt && (
-                        <p className="lead text-muted-foreground">{newPost.excerpt}</p>
-                      )}
+                  <CardContent className="p-8">
+                    {/* Title */}
+                    <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">
+                      {newPost.title || 'Untitled'}
+                    </h1>
+
+                    {/* Tags */}
+                    {selectedPostTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {selectedPostTags.map((tag) => (
+                          <span key={tag} className="text-gray-400 text-sm">
+                            #{tag.toLowerCase().replace(/\s+/g, '')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Excerpt */}
+                    {newPost.excerpt && (
+                      <p className="text-gray-300 text-lg mb-8 leading-relaxed">
+                        {newPost.excerpt}
+                      </p>
+                    )}
+
+                    {/* Divider */}
+                    <hr className="border-gray-700 my-8" />
+
+                    {/* Content */}
+                    <article className="prose prose-lg prose-invert max-w-none
+                      prose-headings:font-serif prose-headings:text-white prose-headings:font-bold
+                      prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
+                      prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+                      prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-4
+                      prose-strong:text-white prose-strong:font-semibold
+                      prose-ul:my-4 prose-ul:text-gray-300
+                      prose-ol:my-4 prose-ol:text-gray-300
+                      prose-li:my-1
+                      prose-code:bg-gray-800 prose-code:text-pink-400 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                      prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-pre:rounded-lg
+                      prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
+                      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-gray-800/50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:text-gray-300 prose-blockquote:not-italic
+                    ">
                       <ReactMarkdown>{newPost.content || '*No content yet*'}</ReactMarkdown>
                     </article>
                   </CardContent>
