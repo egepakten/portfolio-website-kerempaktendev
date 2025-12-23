@@ -17,40 +17,75 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
 
   useEffect(() => {
     // Extract headings from markdown content
+    // First, remove code blocks to avoid picking up # in code
+    const codeBlockRegex = /```[\s\S]*?```|`[^`\n]+`/g;
+    const contentWithoutCode = content.replace(codeBlockRegex, '');
+
     const regex = /^(#{1,3})\s+(.+)$/gm;
     const matches: TOCItem[] = [];
+    const idCounts: Record<string, number> = {};
     let match;
 
-    while ((match = regex.exec(content)) !== null) {
+    while ((match = regex.exec(contentWithoutCode)) !== null) {
       const level = match[1].length;
-      const text = match[2];
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      matches.push({ id, text, level });
+      const text = match[2].trim();
+      // Skip empty headers or headers that look like code comments
+      if (!text || text.startsWith('//') || text.startsWith('/*')) continue;
+
+      const baseId = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+      // Track duplicate IDs and make them unique
+      if (idCounts[baseId] !== undefined) {
+        idCounts[baseId]++;
+        matches.push({ id: `${baseId}-${idCounts[baseId]}`, text, level });
+      } else {
+        idCounts[baseId] = 0;
+        matches.push({ id: baseId, text, level });
+      }
     }
 
     setHeadings(matches);
   }, [content]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
+    if (headings.length === 0) return;
+
+    const handleScroll = () => {
+      // Get all heading elements with their positions
+      const headingElements = headings
+        .map((heading) => {
+          const element = document.getElementById(heading.id);
+          if (element) {
+            return {
+              id: heading.id,
+              top: element.getBoundingClientRect().top,
+            };
           }
-        });
-      },
-      { rootMargin: '-100px 0px -80% 0px' }
-    );
+          return null;
+        })
+        .filter(Boolean) as { id: string; top: number }[];
 
-    headings.forEach((heading) => {
-      const element = document.getElementById(heading.id);
-      if (element) {
-        observer.observe(element);
+      // Find the heading that is closest to the top but still visible or just passed
+      // We use a threshold of 120px from the top of the viewport
+      const threshold = 120;
+      let activeHeading = headingElements[0]?.id || '';
+
+      for (const heading of headingElements) {
+        if (heading.top <= threshold) {
+          activeHeading = heading.id;
+        } else {
+          break;
+        }
       }
-    });
 
-    return () => observer.disconnect();
+      setActiveId(activeHeading);
+    };
+
+    // Initial check
+    handleScroll();
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [headings]);
 
   if (headings.length === 0) return null;

@@ -2,7 +2,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { Copy, Check } from 'lucide-react';
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 
 interface PostContentProps {
@@ -25,20 +25,69 @@ const getTextContent = (children: ReactNode): string => {
   return '';
 };
 
-// Custom heading components with IDs for TOC navigation
-const createHeading = (level: 1 | 2 | 3 | 4 | 5 | 6) => {
-  const HeadingComponent = ({ children }: { children?: ReactNode }) => {
-    const text = getTextContent(children);
-    const id = generateSlug(text);
-    const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+// Pre-compute heading IDs from content to handle duplicates
+// This ensures IDs match between PostContent and TableOfContents
+const computeHeadingIds = (content: string): Map<string, string[]> => {
+  // Remove code blocks first to match TableOfContents logic
+  const codeBlockRegex = /```[\s\S]*?```|`[^`\n]+`/g;
+  const contentWithoutCode = content.replace(codeBlockRegex, '');
 
-    return (
-      <Tag id={id} className="scroll-mt-24">
-        {children}
-      </Tag>
-    );
+  const regex = /^(#{1,6})\s+(.+)$/gm;
+  const headingIds = new Map<string, string[]>();
+  const idCounts: Record<string, number> = {};
+  let match;
+
+  while ((match = regex.exec(contentWithoutCode)) !== null) {
+    const text = match[2].trim();
+    if (!text || text.startsWith('//') || text.startsWith('/*')) continue;
+
+    const baseId = generateSlug(text);
+
+    let uniqueId: string;
+    if (idCounts[baseId] !== undefined) {
+      idCounts[baseId]++;
+      uniqueId = `${baseId}-${idCounts[baseId]}`;
+    } else {
+      idCounts[baseId] = 0;
+      uniqueId = baseId;
+    }
+
+    // Store the unique ID for this heading text occurrence
+    if (!headingIds.has(text)) {
+      headingIds.set(text, []);
+    }
+    headingIds.get(text)!.push(uniqueId);
+  }
+
+  return headingIds;
+};
+
+// Create heading component factory that uses pre-computed IDs
+const createHeadingFactory = (headingIds: Map<string, string[]>) => {
+  const usedCounts: Record<string, number> = {};
+
+  return (level: 1 | 2 | 3 | 4 | 5 | 6) => {
+    const HeadingComponent = ({ children }: { children?: ReactNode }) => {
+      const text = getTextContent(children);
+      const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+
+      // Get the next available ID for this heading text
+      const ids = headingIds.get(text) || [generateSlug(text)];
+      const countKey = text;
+      if (usedCounts[countKey] === undefined) {
+        usedCounts[countKey] = 0;
+      }
+      const id = ids[usedCounts[countKey]] || generateSlug(text);
+      usedCounts[countKey]++;
+
+      return (
+        <Tag id={id} className="scroll-mt-24">
+          {children}
+        </Tag>
+      );
+    };
+    return HeadingComponent;
   };
-  return HeadingComponent;
 };
 
 const CodeBlock = ({ children, className, ...props }: React.HTMLAttributes<HTMLElement>) => {
@@ -85,6 +134,10 @@ const CodeBlock = ({ children, className, ...props }: React.HTMLAttributes<HTMLE
 };
 
 export const PostContent = ({ content }: PostContentProps) => {
+  // Pre-compute heading IDs to handle duplicates
+  const headingIds = useMemo(() => computeHeadingIds(content), [content]);
+  const createHeading = useMemo(() => createHeadingFactory(headingIds), [headingIds]);
+
   return (
     <div className="prose-custom">
       <ReactMarkdown

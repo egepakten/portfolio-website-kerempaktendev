@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, ExternalLink, GitBranch, FileText, GitCommit, LayoutGrid, Loader2, BookOpen, Lock, RefreshCw, List } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -32,10 +32,12 @@ export default function ProjectDetailPage() {
   const [isSyncingReadme, setIsSyncingReadme] = useState(false);
 
   const isSubscribed = subscription?.is_active;
+  const [activeHeaderId, setActiveHeaderId] = useState<string>('');
 
   // Extract headers from README for table of contents (skipping code blocks)
-  const readmeHeaders = useMemo(() => {
-    if (!readme) return [];
+  // Also create a map of text -> unique IDs for ReactMarkdown rendering
+  const { readmeHeaders, headingIdMap } = useMemo(() => {
+    if (!readme) return { readmeHeaders: [], headingIdMap: new Map<string, string[]>() };
 
     // Remove code blocks before parsing headers to avoid picking up # in code
     const codeBlockRegex = /```[\s\S]*?```|`[^`\n]+`/g;
@@ -43,17 +45,91 @@ export default function ProjectDetailPage() {
 
     const headerRegex = /^(#{1,6})\s+(.+)$/gm;
     const headers: { level: number; text: string; id: string }[] = [];
+    const idCounts: Record<string, number> = {};
+    const idMap = new Map<string, string[]>();
     let match;
     while ((match = headerRegex.exec(readmeWithoutCode)) !== null) {
       const level = match[1].length;
       const text = match[2].replace(/[*_`~\[\]]/g, '').trim();
       // Skip empty headers or headers that look like code comments
       if (!text || text.startsWith('//') || text.startsWith('/*')) continue;
-      const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      const baseId = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+
+      // Track duplicate IDs and make them unique
+      let id: string;
+      if (idCounts[baseId] !== undefined) {
+        idCounts[baseId]++;
+        id = `${baseId}-${idCounts[baseId]}`;
+      } else {
+        idCounts[baseId] = 0;
+        id = baseId;
+      }
+
       headers.push({ level, text, id });
+
+      // Store in map for ReactMarkdown to use
+      if (!idMap.has(text)) {
+        idMap.set(text, []);
+      }
+      idMap.get(text)!.push(id);
     }
-    return headers;
+    return { readmeHeaders: headers, headingIdMap: idMap };
   }, [readme]);
+
+  // Track which heading IDs have been used during rendering
+  const usedHeadingCounts = useRef<Record<string, number>>({});
+
+  // Reset the heading counts when readme changes (before rendering)
+  useEffect(() => {
+    usedHeadingCounts.current = {};
+  }, [readme]);
+
+  // Track active header based on scroll position within the README container
+  useEffect(() => {
+    if (readmeHeaders.length === 0 || activeTab !== 'readme') return;
+
+    const container = document.getElementById('readme-content');
+    if (!container) return;
+
+    const handleScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const threshold = 20; // Distance from top of container
+
+      // Get all heading elements with their positions relative to the container
+      const headingElements = readmeHeaders
+        .map((header) => {
+          const element = document.getElementById(header.id);
+          if (element) {
+            const elementRect = element.getBoundingClientRect();
+            return {
+              id: header.id,
+              top: elementRect.top - containerRect.top,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean) as { id: string; top: number }[];
+
+      // Find the heading that is closest to the top but still visible or just passed
+      let activeHeading = headingElements[0]?.id || '';
+
+      for (const heading of headingElements) {
+        if (heading.top <= threshold) {
+          activeHeading = heading.id;
+        } else {
+          break;
+        }
+      }
+
+      setActiveHeaderId(activeHeading);
+    };
+
+    // Initial check
+    handleScroll();
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [readmeHeaders, activeTab]);
 
   // Scroll to header in README (within the README container, not the whole page)
   const scrollToHeader = useCallback((headerId: string) => {
@@ -344,33 +420,51 @@ export default function ProjectDetailPage() {
                           components={{
                             h1: ({ children, ...props }) => {
                               const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
-                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                              return <h1 id={id} {...props}>{children}</h1>;
+                              const ids = headingIdMap.get(text) || [text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')];
+                              if (usedHeadingCounts.current[text] === undefined) usedHeadingCounts.current[text] = 0;
+                              const id = ids[usedHeadingCounts.current[text]] || ids[0];
+                              usedHeadingCounts.current[text]++;
+                              return <h1 id={id} className="scroll-mt-4" {...props}>{children}</h1>;
                             },
                             h2: ({ children, ...props }) => {
                               const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
-                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                              return <h2 id={id} {...props}>{children}</h2>;
+                              const ids = headingIdMap.get(text) || [text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')];
+                              if (usedHeadingCounts.current[text] === undefined) usedHeadingCounts.current[text] = 0;
+                              const id = ids[usedHeadingCounts.current[text]] || ids[0];
+                              usedHeadingCounts.current[text]++;
+                              return <h2 id={id} className="scroll-mt-4" {...props}>{children}</h2>;
                             },
                             h3: ({ children, ...props }) => {
                               const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
-                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                              return <h3 id={id} {...props}>{children}</h3>;
+                              const ids = headingIdMap.get(text) || [text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')];
+                              if (usedHeadingCounts.current[text] === undefined) usedHeadingCounts.current[text] = 0;
+                              const id = ids[usedHeadingCounts.current[text]] || ids[0];
+                              usedHeadingCounts.current[text]++;
+                              return <h3 id={id} className="scroll-mt-4" {...props}>{children}</h3>;
                             },
                             h4: ({ children, ...props }) => {
                               const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
-                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                              return <h4 id={id} {...props}>{children}</h4>;
+                              const ids = headingIdMap.get(text) || [text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')];
+                              if (usedHeadingCounts.current[text] === undefined) usedHeadingCounts.current[text] = 0;
+                              const id = ids[usedHeadingCounts.current[text]] || ids[0];
+                              usedHeadingCounts.current[text]++;
+                              return <h4 id={id} className="scroll-mt-4" {...props}>{children}</h4>;
                             },
                             h5: ({ children, ...props }) => {
                               const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
-                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                              return <h5 id={id} {...props}>{children}</h5>;
+                              const ids = headingIdMap.get(text) || [text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')];
+                              if (usedHeadingCounts.current[text] === undefined) usedHeadingCounts.current[text] = 0;
+                              const id = ids[usedHeadingCounts.current[text]] || ids[0];
+                              usedHeadingCounts.current[text]++;
+                              return <h5 id={id} className="scroll-mt-4" {...props}>{children}</h5>;
                             },
                             h6: ({ children, ...props }) => {
                               const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
-                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                              return <h6 id={id} {...props}>{children}</h6>;
+                              const ids = headingIdMap.get(text) || [text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')];
+                              if (usedHeadingCounts.current[text] === undefined) usedHeadingCounts.current[text] = 0;
+                              const id = ids[usedHeadingCounts.current[text]] || ids[0];
+                              usedHeadingCounts.current[text]++;
+                              return <h6 id={id} className="scroll-mt-4" {...props}>{children}</h6>;
                             },
                           }}
                         >
@@ -425,11 +519,11 @@ export default function ProjectDetailPage() {
                     <button
                       key={index}
                       onClick={() => scrollToHeader(header.id)}
-                      className={`block w-full text-left transition-colors hover:text-primary py-1 ${
-                        header.level === 1 ? 'font-semibold text-foreground text-base' :
-                        header.level === 2 ? 'pl-3 text-muted-foreground text-sm hover:text-foreground' :
-                        header.level === 3 ? 'pl-6 text-muted-foreground text-sm' :
-                        'pl-9 text-muted-foreground text-xs'
+                      style={{ paddingLeft: header.level > 1 ? `${(header.level - 1) * 12}px` : undefined }}
+                      className={`block w-full text-left transition-colors py-1 ${
+                        activeHeaderId === header.id
+                          ? 'text-primary font-medium'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                       title={header.text}
                     >
