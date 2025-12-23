@@ -1,15 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Shield, Settings } from 'lucide-react';
+import { Menu, X, Shield, Settings, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserMenu } from './UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 export const Header = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isAdminPage = location.pathname.startsWith('/admin');
+  const { theme, toggleTheme } = useTheme();
   const {
     subscription,
     isAdmin
@@ -74,11 +76,36 @@ export const Header = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-9 w-9"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
           <UserMenu />
         </div>
 
         {/* Mobile Menu Button */}
         <div className="flex md:hidden items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-9 w-9"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
           <UserMenu />
           <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

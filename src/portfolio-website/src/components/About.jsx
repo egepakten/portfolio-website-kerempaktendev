@@ -91,7 +91,7 @@ const About = () => {
           viewport={{ once: true }}
         >
           {/* Section Header */}
-          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center">
+          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center text-gray-900 dark:text-white">
             <span className="text-primary font-mono mr-4">01.</span>
             About Me
             <div className="ml-8 h-[1px] flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
@@ -140,15 +140,15 @@ const About = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="flex-1 bg-white rounded-xl p-6 text-center shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-primary/30 group"
+                className="flex-1 bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-primary/30 group"
               >
                 <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300">
                   {stat.icon}
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
                   {stat.number}
                 </div>
-                <div className="text-gray-600 text-sm font-medium">{stat.label}</div>
+                <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">{stat.label}</div>
               </motion.div>
             ))}
           </div>

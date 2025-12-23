@@ -31,7 +31,7 @@ serve(async (req: Request): Promise<Response> => {
     const body = await req.json();
     console.log("Request body:", JSON.stringify(body, null, 2));
     
-    const { action, token: bodyToken, owner, repo, repoId } = body;
+    const { action, token: bodyToken, owner, repo, repoId, forceRefresh } = body;
     
     // Log what we received
     console.log("Action:", action);
@@ -701,8 +701,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (action === "get_readme") {
-      // Check cache first
-      if (repoId) {
+      // Check cache first (unless forceRefresh is true)
+      if (repoId && !forceRefresh) {
         const { data: cached } = await supabase
           .from("github_cache")
           .select("data")
@@ -717,6 +717,10 @@ serve(async (req: Request): Promise<Response> => {
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
+      }
+
+      if (forceRefresh) {
+        console.log(`Force refreshing README for ${owner}/${repo}`);
       }
 
       // Fetch from GitHub

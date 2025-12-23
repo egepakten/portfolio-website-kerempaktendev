@@ -19,15 +19,15 @@ const Hero = () => {
               Hi, my name is
             </p>
 
-            <h1 className="text-5xl lg:text-7xl font-bold mb-6 text-gray-900">
+            <h1 className="text-5xl lg:text-7xl font-bold mb-6 text-gray-900 dark:text-white">
               Kerem Ege Pakten
             </h1>
 
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-700 mb-8">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-700 dark:text-gray-300 mb-8">
               Junior Software Engineer | Cloud & DevOps Enthusiast
             </h2>
 
-            <p className="text-gray-600 text-lg lg:text-xl max-w-2xl mb-12 leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-400 text-lg lg:text-xl max-w-2xl mb-12 leading-relaxed">
               Computer Science graduate from King's College London specializing in
               cloud engineering and full-stack development. Experienced with AWS,
               React, and TypeScript. Currently building Individual Cloud & AI

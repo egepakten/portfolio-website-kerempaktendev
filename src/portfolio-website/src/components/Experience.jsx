@@ -130,7 +130,7 @@ const Experience = () => {
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center">
+          <h2 className="text-4xl lg:text-5xl font-bold mb-12 flex items-center text-gray-900 dark:text-white">
             <span className="text-primary font-mono mr-4">02.</span>
             Experience
             <div className="ml-8 h-[1px] flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
@@ -152,9 +152,9 @@ const Experience = () => {
                 >
                   {/* Timeline Dot */}
                   <div className={`absolute left-0 top-8 w-[38px] h-[38px] rounded-full flex items-center justify-center z-10 transition-all duration-300 ${
-                    expandedIndex === index 
-                      ? "bg-primary shadow-lg shadow-primary/30" 
-                      : "bg-white border-2 border-primary/30"
+                    expandedIndex === index
+                      ? "bg-primary shadow-lg shadow-primary/30"
+                      : "bg-white dark:bg-gray-800 border-2 border-primary/30"
                   }`}>
                     <div className={`w-2.5 h-2.5 rounded-full ${
                       expandedIndex === index ? "bg-white" : "bg-primary"
@@ -162,10 +162,10 @@ const Experience = () => {
                   </div>
 
                   <div
-                    className={`bg-white rounded-xl p-6 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md ${
+                    className={`bg-white dark:bg-gray-800 rounded-xl p-6 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md ${
                       expandedIndex === index
                         ? "border-l-4 border-l-primary border border-primary/20 shadow-lg"
-                        : "border border-gray-100 hover:border-primary/30"
+                        : "border border-gray-100 dark:border-gray-700 hover:border-primary/30"
                     }`}
                     onClick={() =>
                       setExpandedIndex(expandedIndex === index ? -1 : index)
@@ -175,7 +175,7 @@ const Experience = () => {
                       <div className="flex items-center gap-4">
                         <div className="text-3xl bg-primary/10 p-2 rounded-lg">{exp.logo}</div>
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                             {exp.position}
                           </h3>
                           <p className="text-primary font-medium">
@@ -183,12 +183,12 @@ const Experience = () => {
                           </p>
                         </div>
                       </div>
-                      <span className="text-gray-500 text-sm font-mono bg-gray-50 px-3 py-1 rounded-full">
+                      <span className="text-gray-500 dark:text-gray-400 text-sm font-mono bg-gray-50 dark:bg-gray-700 px-3 py-1 rounded-full">
                         {exp.period}
                       </span>
                     </div>
 
-                    <p className="text-gray-600 mb-3 leading-relaxed">{exp.description}</p>
+                    <p className="text-gray-600 dark:text-gray-300 mb-3 leading-relaxed">{exp.description}</p>
 
                     <AnimatePresence>
                       {expandedIndex === index && (
@@ -199,7 +199,7 @@ const Experience = () => {
                           transition={{ duration: 0.3 }}
                           className="overflow-hidden"
                         >
-                          <div className="border-t border-gray-100 pt-4 mt-4">
+                          <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-4">
                             <h4 className="text-primary font-semibold mb-3 flex items-center gap-2">
                               <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
                               Key Achievements
@@ -208,7 +208,7 @@ const Experience = () => {
                               {exp.achievements.map((achievement, i) => (
                                 <li
                                   key={i}
-                                  className="flex items-start gap-3 text-gray-700"
+                                  className="flex items-start gap-3 text-gray-700 dark:text-gray-300"
                                 >
                                   <span className="text-primary mt-1.5 text-xs">▹</span>
                                   <span className="leading-relaxed">{achievement}</span>

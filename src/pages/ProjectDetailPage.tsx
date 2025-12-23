@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, ExternalLink, GitBranch, FileText, GitCommit, LayoutGrid, Loader2, BookOpen, Lock } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, ExternalLink, GitBranch, FileText, GitCommit, LayoutGrid, Loader2, BookOpen, Lock, RefreshCw, List } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Layout } from '@/components/layout/Layout';
@@ -29,8 +29,92 @@ export default function ProjectDetailPage() {
   const [isLoadingReadme, setIsLoadingReadme] = useState(true);
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('readme');
+  const [isSyncingReadme, setIsSyncingReadme] = useState(false);
 
   const isSubscribed = subscription?.is_active;
+
+  // Extract headers from README for table of contents (skipping code blocks)
+  const readmeHeaders = useMemo(() => {
+    if (!readme) return [];
+
+    // Remove code blocks before parsing headers to avoid picking up # in code
+    const codeBlockRegex = /```[\s\S]*?```|`[^`\n]+`/g;
+    const readmeWithoutCode = readme.replace(codeBlockRegex, '');
+
+    const headerRegex = /^(#{1,6})\s+(.+)$/gm;
+    const headers: { level: number; text: string; id: string }[] = [];
+    let match;
+    while ((match = headerRegex.exec(readmeWithoutCode)) !== null) {
+      const level = match[1].length;
+      const text = match[2].replace(/[*_`~\[\]]/g, '').trim();
+      // Skip empty headers or headers that look like code comments
+      if (!text || text.startsWith('//') || text.startsWith('/*')) continue;
+      const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      headers.push({ level, text, id });
+    }
+    return headers;
+  }, [readme]);
+
+  // Scroll to header in README (within the README container, not the whole page)
+  const scrollToHeader = useCallback((headerId: string) => {
+    const container = document.getElementById('readme-content');
+    const element = document.getElementById(headerId);
+    if (container && element) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const offsetTop = elementRect.top - containerRect.top + container.scrollTop;
+      container.scrollTo({ top: offsetTop - 16, behavior: 'smooth' });
+    }
+  }, []);
+
+  // Helper function to call github-api edge function
+  const callGitHubApi = useCallback(async (body: Record<string, unknown>) => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/github-api`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return { data: await response.json() };
+  }, []);
+
+  // Sync README from GitHub (bypassing cache)
+  const syncReadme = useCallback(async () => {
+    if (!project?.github_repo_id) return;
+
+    setIsSyncingReadme(true);
+    try {
+      const readmeRes = await callGitHubApi({
+        action: 'get_readme',
+        ...(token && { token }),
+        owner: project.repo_owner,
+        repo: project.repo_name,
+        repoId: project.github_repo_id,
+        forceRefresh: true,
+      });
+
+      if (readmeRes.data?.readme) {
+        const readmeContent = typeof readmeRes.data.readme === 'string'
+          ? readmeRes.data.readme
+          : readmeRes.data.readme?.content || '';
+        setReadme(readmeContent);
+      }
+    } catch (error) {
+      console.error('Error syncing README:', error);
+    }
+    setIsSyncingReadme(false);
+  }, [project, token, callGitHubApi]);
 
   useEffect(() => {
     const fetchGitHubData = async () => {
@@ -43,29 +127,6 @@ export default function ProjectDetailPage() {
       }
 
       try {
-        // Helper function to call github-api edge function
-        // Uses direct fetch for anonymous users to avoid auth issues
-        const callGitHubApi = async (body: Record<string, unknown>) => {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-          const response = await fetch(`${supabaseUrl}/functions/v1/github-api`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': anonKey,
-              'Authorization': `Bearer ${anonKey}`,
-            },
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          return { data: await response.json() };
-        };
-
         const [readmeRes, langsRes] = await Promise.all([
           callGitHubApi({
             action: 'get_readme',
@@ -102,7 +163,7 @@ export default function ProjectDetailPage() {
     if (project) {
       fetchGitHubData();
     }
-  }, [project, token]);
+  }, [project, token, callGitHubApi]);
 
   if (isLoading) {
     return (
@@ -253,10 +314,90 @@ export default function ProjectDetailPage() {
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : readme ? (
-                  <div className="prose-custom max-w-none max-h-[600px] overflow-y-auto">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {readme}
-                    </ReactMarkdown>
+                  <div className="flex gap-6">
+                    {/* README Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Sync Button */}
+                      <div className="flex justify-end mb-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={syncReadme}
+                          disabled={isSyncingReadme}
+                        >
+                          <RefreshCw className={`w-4 h-4 mr-2 ${isSyncingReadme ? 'animate-spin' : ''}`} />
+                          {isSyncingReadme ? 'Syncing...' : 'Sync README'}
+                        </Button>
+                      </div>
+                      <div className="prose-custom max-w-none max-h-[600px] overflow-y-auto" id="readme-content">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({ children, ...props }) => {
+                              const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+                              return <h1 id={id} {...props}>{children}</h1>;
+                            },
+                            h2: ({ children, ...props }) => {
+                              const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+                              return <h2 id={id} {...props}>{children}</h2>;
+                            },
+                            h3: ({ children, ...props }) => {
+                              const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+                              return <h3 id={id} {...props}>{children}</h3>;
+                            },
+                            h4: ({ children, ...props }) => {
+                              const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+                              return <h4 id={id} {...props}>{children}</h4>;
+                            },
+                            h5: ({ children, ...props }) => {
+                              const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+                              return <h5 id={id} {...props}>{children}</h5>;
+                            },
+                            h6: ({ children, ...props }) => {
+                              const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                              const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+                              return <h6 id={id} {...props}>{children}</h6>;
+                            },
+                          }}
+                        >
+                          {readme}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+
+                    {/* Table of Contents Sidebar */}
+                    {readmeHeaders.length > 0 && (
+                      <div className="hidden lg:block w-56 flex-shrink-0">
+                        <div className="sticky top-4">
+                          <div className="flex items-center gap-2 mb-3 text-sm font-medium text-foreground">
+                            <List className="w-4 h-4" />
+                            On this page
+                          </div>
+                          <nav className="space-y-1 max-h-[500px] overflow-y-auto">
+                            {readmeHeaders.map((header, index) => (
+                              <button
+                                key={index}
+                                onClick={() => scrollToHeader(header.id)}
+                                className={`block w-full text-left text-sm transition-colors hover:text-primary truncate ${
+                                  header.level === 1 ? 'font-medium text-foreground' :
+                                  header.level === 2 ? 'pl-3 text-muted-foreground' :
+                                  header.level === 3 ? 'pl-6 text-muted-foreground text-xs' :
+                                  'pl-9 text-muted-foreground text-xs'
+                                }`}
+                                title={header.text}
+                              >
+                                {header.text}
+                              </button>
+                            ))}
+                          </nav>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-12">No README available.</p>
