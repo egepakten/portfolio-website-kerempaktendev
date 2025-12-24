@@ -628,11 +628,13 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
 
     createConnection: async (data) => {
       try {
-        // First try with basic fields only (most compatible)
+        // Include handle info in database insert
         const insertData: Record<string, unknown> = {
           from_node_id: data.fromNodeId,
           to_node_id: data.toNodeId,
           connection_type: data.connectionType || 'default',
+          source_handle: data.sourceHandle || 'bottom-source',
+          target_handle: data.targetHandle || 'top-target',
         };
         if (data.label) insertData.label = data.label;
 
@@ -644,11 +646,7 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
 
         if (error) throw error;
 
-        // Transform and add handles from input data (stored in memory only)
         const connection = transformConnection(result as NodeConnectionRow);
-        // Store handle info in memory even if DB doesn't have columns
-        connection.sourceHandle = data.sourceHandle;
-        connection.targetHandle = data.targetHandle;
 
         set(state => ({ connections: [...state.connections, connection] }));
         return connection;
