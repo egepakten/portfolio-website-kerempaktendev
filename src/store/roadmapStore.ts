@@ -200,6 +200,7 @@ interface RoadmapState {
   toggleNodeCompleted: (nodeId: string) => void;
   getProgress: (roadmapId: string) => { completed: number; total: number; percentage: number };
   resetProgress: (roadmapId: string) => void;
+  setCurrentUser: (userId: string | null) => void;
 
   // Helpers
   getFlowNodes: () => RoadmapFlowNode[];
@@ -212,11 +213,20 @@ interface ProgressState {
   completedNodes: Record<string, string[]>; // roadmapId -> nodeIds
 }
 
+// Helper to get localStorage key for a user
+const getStorageKey = (userId: string | null) => {
+  return userId ? `roadmap-progress-${userId}` : 'roadmap-progress-anonymous';
+};
+
+// Current user ID (will be set by the component)
+let currentUserId: string | null = null;
+
 export const useRoadmapStore = create<RoadmapState>((set, get) => {
-  // Load completed nodes from localStorage
-  const loadCompletedNodes = (): Set<string> => {
+  // Load completed nodes from localStorage for the current user
+  const loadCompletedNodes = (userId: string | null = currentUserId): Set<string> => {
     try {
-      const stored = localStorage.getItem('roadmap-progress');
+      const storageKey = getStorageKey(userId);
+      const stored = localStorage.getItem(storageKey);
       if (stored) {
         const data: ProgressState = JSON.parse(stored);
         const allCompleted = Object.values(data.completedNodes).flat();
@@ -230,7 +240,8 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
 
   const saveCompletedNodes = (completedNodes: Set<string>, roadmapId?: string) => {
     try {
-      const stored = localStorage.getItem('roadmap-progress');
+      const storageKey = getStorageKey(currentUserId);
+      const stored = localStorage.getItem(storageKey);
       const data: ProgressState = stored ? JSON.parse(stored) : { completedNodes: {} };
 
       if (roadmapId) {
@@ -239,7 +250,7 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
         data.completedNodes[roadmapId] = roadmapNodeIds.filter(id => completedNodes.has(id));
       }
 
-      localStorage.setItem('roadmap-progress', JSON.stringify(data));
+      localStorage.setItem(storageKey, JSON.stringify(data));
     } catch (e) {
       console.error('Error saving progress:', e);
     }
@@ -752,17 +763,26 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
 
       set({ completedNodes: newCompleted });
 
-      // Clear from localStorage
+      // Clear from localStorage for current user
       try {
-        const stored = localStorage.getItem('roadmap-progress');
+        const storageKey = getStorageKey(currentUserId);
+        const stored = localStorage.getItem(storageKey);
         if (stored) {
           const data: ProgressState = JSON.parse(stored);
           delete data.completedNodes[roadmapId];
-          localStorage.setItem('roadmap-progress', JSON.stringify(data));
+          localStorage.setItem(storageKey, JSON.stringify(data));
         }
       } catch (e) {
         console.error('Error resetting progress:', e);
       }
+    },
+
+    setCurrentUser: (userId) => {
+      // Update the current user ID
+      currentUserId = userId;
+      // Reload completed nodes for this user
+      const completedNodes = loadCompletedNodes(userId);
+      set({ completedNodes });
     },
 
     getFlowNodes: () => {

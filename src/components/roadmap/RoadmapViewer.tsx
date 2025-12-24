@@ -13,6 +13,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useRoadmapStore } from '@/store/roadmapStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { RoadmapNode } from './RoadmapNode';
 import { ContainerNode } from './ContainerNode';
 import { NodeDetailModal } from './NodeDetailModal';
@@ -40,6 +41,7 @@ export function RoadmapViewer({
   showLegend = true,
   className,
 }: RoadmapViewerProps) {
+  const { user } = useAuth();
   const {
     currentRoadmap,
     nodes: storeNodes,
@@ -53,11 +55,17 @@ export function RoadmapViewer({
     toggleNodeCompleted,
     resetProgress,
     getNodePosts,
+    setCurrentUser,
   } = useRoadmapStore();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
+
+  // Set current user for progress tracking (per-user progress)
+  useEffect(() => {
+    setCurrentUser(user?.id || null);
+  }, [user?.id, setCurrentUser]);
 
   // Fetch roadmap data
   useEffect(() => {
