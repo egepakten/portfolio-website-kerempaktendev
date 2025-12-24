@@ -73,8 +73,9 @@ export function RoadmapViewer({
   }, [slug, fetchRoadmapBySlug]);
 
   // Update nodes and edges when store changes or completion status changes
+  // Pass readOnly=true to hide connection handles in public viewer
   useEffect(() => {
-    const flowNodes = getFlowNodes();
+    const flowNodes = getFlowNodes(true);
     const flowEdges = getFlowEdges();
     setNodes(flowNodes as Node[]);
     setEdges(flowEdges as Edge[]);

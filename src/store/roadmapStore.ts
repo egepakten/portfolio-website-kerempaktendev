@@ -53,6 +53,8 @@ interface NodeConnectionRow {
   to_node_id: string;
   connection_type: string;
   label: string | null;
+  source_handle?: string | null;
+  target_handle?: string | null;
   created_at: string;
 }
 
@@ -103,11 +105,13 @@ const transformConnection = (row: NodeConnectionRow): NodeConnection => ({
   toNodeId: row.to_node_id,
   connectionType: row.connection_type as ConnectionType,
   label: row.label || undefined,
+  sourceHandle: row.source_handle || undefined,
+  targetHandle: row.target_handle || undefined,
   createdAt: row.created_at,
 });
 
 // Convert to React Flow format
-export const nodeToFlowNode = (node: RoadmapNode, postCount: number = 0, isCompleted: boolean = false): RoadmapFlowNode => {
+export const nodeToFlowNode = (node: RoadmapNode, postCount: number = 0, isCompleted: boolean = false, readOnly: boolean = false): RoadmapFlowNode => {
   const flowNode: RoadmapFlowNode = {
     id: node.id,
     type: node.isContainer ? 'containerNode' : 'roadmapNode',
@@ -125,6 +129,7 @@ export const nodeToFlowNode = (node: RoadmapNode, postCount: number = 0, isCompl
       postCount,
       width: node.width,
       height: node.height,
+      readOnly,
     },
   };
 
@@ -151,6 +156,8 @@ export const connectionToFlowEdge = (connection: NodeConnection): RoadmapFlowEdg
   id: connection.id,
   source: connection.fromNodeId,
   target: connection.toNodeId,
+  sourceHandle: connection.sourceHandle || 'bottom-source',
+  targetHandle: connection.targetHandle || 'top-target',
   type: connection.connectionType === 'optional' ? 'step' : 'smoothstep',
   animated: connection.connectionType === 'recommended',
   style: {
@@ -203,7 +210,7 @@ interface RoadmapState {
   setCurrentUser: (userId: string | null) => void;
 
   // Helpers
-  getFlowNodes: () => RoadmapFlowNode[];
+  getFlowNodes: (readOnly?: boolean) => RoadmapFlowNode[];
   getFlowEdges: () => RoadmapFlowEdge[];
   getNodePosts: (nodeId: string) => Post[];
 }
@@ -621,20 +628,28 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
 
     createConnection: async (data) => {
       try {
+        // First try with basic fields only (most compatible)
+        const insertData: Record<string, unknown> = {
+          from_node_id: data.fromNodeId,
+          to_node_id: data.toNodeId,
+          connection_type: data.connectionType || 'default',
+        };
+        if (data.label) insertData.label = data.label;
+
         const { data: result, error } = await supabase
           .from('node_connections')
-          .insert({
-            from_node_id: data.fromNodeId,
-            to_node_id: data.toNodeId,
-            connection_type: data.connectionType || 'default',
-            label: data.label,
-          })
+          .insert(insertData)
           .select()
           .single();
 
         if (error) throw error;
 
+        // Transform and add handles from input data (stored in memory only)
         const connection = transformConnection(result as NodeConnectionRow);
+        // Store handle info in memory even if DB doesn't have columns
+        connection.sourceHandle = data.sourceHandle;
+        connection.targetHandle = data.targetHandle;
+
         set(state => ({ connections: [...state.connections, connection] }));
         return connection;
       } catch (error) {
@@ -785,7 +800,7 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
       set({ completedNodes });
     },
 
-    getFlowNodes: () => {
+    getFlowNodes: (readOnly = false) => {
       const { nodes, nodePosts, completedNodes } = get();
 
       // Sort nodes so parent containers come before children
@@ -804,7 +819,7 @@ export const useRoadmapStore = create<RoadmapState>((set, get) => {
       return sortedNodes.map(node => {
         const posts = nodePosts.get(node.id) || [];
         const isCompleted = completedNodes.has(node.id);
-        return nodeToFlowNode(node, posts.length, isCompleted);
+        return nodeToFlowNode(node, posts.length, isCompleted, readOnly);
       });
     },
 

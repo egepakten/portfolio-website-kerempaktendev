@@ -184,6 +184,8 @@ export default function AdminRoadmapEditorPage() {
         fromNodeId: connection.source,
         toNodeId: connection.target,
         connectionType: 'default',
+        sourceHandle: connection.sourceHandle || undefined,
+        targetHandle: connection.targetHandle || undefined,
       });
     }
   }, [createConnection]);

@@ -18,6 +18,7 @@ interface RoadmapNodeData {
   postCount?: number;
   width?: number;
   height?: number;
+  readOnly?: boolean;
 }
 
 const colorStyles: Record<RoadmapNodeColor, { bg: string; border: string; text: string; hover: string }> = {
@@ -98,10 +99,55 @@ export const RoadmapNode = memo(({ data, selected }: NodeProps & { data: Roadmap
         data.isCompleted && 'ring-2 ring-green-500'
       )}
     >
+      {/* Connection handles - visually hidden in read-only mode but kept in DOM for edge rendering */}
+      {/* Top handle - source */}
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      {/* Top handle - target */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-600 !border-2 !border-white dark:!border-gray-800"
+        id="top-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+
+      {/* Left handle - source */}
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      {/* Left handle - target */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
       />
 
       {/* Completed Badge */}
@@ -136,10 +182,54 @@ export const RoadmapNode = memo(({ data, selected }: NodeProps & { data: Roadmap
         </div>
       )}
 
+      {/* Right handle - source */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      {/* Right handle - target */}
+      <Handle
+        type="target"
+        position={Position.Right}
+        id="right-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+
+      {/* Bottom handle - source */}
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-600 !border-2 !border-white dark:!border-gray-800"
+        id="bottom-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      {/* Bottom handle - target */}
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
       />
     </motion.div>
   );

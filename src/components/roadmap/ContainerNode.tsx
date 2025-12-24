@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { NodeProps, NodeResizer } from '@xyflow/react';
+import { NodeProps, NodeResizer, Handle, Position } from '@xyflow/react';
 import { GripHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RoadmapNodeColor } from '@/types';
@@ -10,6 +10,7 @@ interface ContainerNodeData {
   color: RoadmapNodeColor;
   width?: number;
   height?: number;
+  readOnly?: boolean;
 }
 
 const colorStyles: Record<RoadmapNodeColor, { bg: string; border: string; text: string; header: string }> = {
@@ -69,6 +70,96 @@ export const ContainerNode = memo(({ data, selected }: NodeProps & { data: Conta
         isVisible={selected}
         lineClassName="!border-blue-500"
         handleClassName="!w-3 !h-3 !bg-blue-500 !border-white"
+      />
+
+      {/* Connection handles - visually hidden in read-only mode but kept in DOM for edge rendering */}
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      <Handle
+        type="target"
+        position={Position.Right}
+        id="right-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom-source"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        id="bottom-target"
+        className={cn(
+          "!w-3 !h-3 !border-2",
+          data.readOnly
+            ? "!opacity-0 !pointer-events-none"
+            : "!bg-gray-400 dark:!bg-gray-600 !border-white dark:!border-gray-800"
+        )}
       />
 
       {/* Drag handle header - use this class name for dragHandle */}

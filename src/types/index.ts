@@ -109,6 +109,8 @@ export interface NodeConnection {
   toNodeId: string;
   connectionType: ConnectionType;
   label?: string;
+  sourceHandle?: string;
+  targetHandle?: string;
   createdAt: string;
 }
 
