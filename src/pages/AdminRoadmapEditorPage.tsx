@@ -481,7 +481,7 @@ export default function AdminRoadmapEditorPage() {
 
         {/* Node Properties Sheet */}
         <Sheet open={nodePropertiesOpen} onOpenChange={setNodePropertiesOpen}>
-          <SheetContent className="w-[400px] sm:max-w-[400px]">
+          <SheetContent className="w-[400px] sm:w-[400px] sm:max-w-[400px] overflow-y-auto">
             <SheetHeader>
               <SheetTitle>Node Properties</SheetTitle>
               <SheetDescription>
@@ -490,121 +490,119 @@ export default function AdminRoadmapEditorPage() {
             </SheetHeader>
 
             {selectedNode && (
-              <div className="mt-6 space-y-6">
-                {/* Basic Properties */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="node-title">Title</Label>
-                    <Input
-                      id="node-title"
-                      value={editForm.title}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="node-description">Description</Label>
-                    <Textarea
-                      id="node-description"
-                      value={editForm.description}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Type</Label>
-                      <Select
-                        value={editForm.nodeType}
-                        onValueChange={(v) => setEditForm(prev => ({ ...prev, nodeType: v as NodeType }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {NODE_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Color</Label>
-                      <Select
-                        value={editForm.color}
-                        onValueChange={(v) => setEditForm(prev => ({ ...prev, color: v as RoadmapNodeColor }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {NODE_COLORS.map((color) => (
-                            <SelectItem key={color.value} value={color.value}>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded ${color.class}`} />
-                                {color.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="is-recommended">Recommended</Label>
-                    <Switch
-                      id="is-recommended"
-                      checked={editForm.isRecommended}
-                      onCheckedChange={(v) => setEditForm(prev => ({ ...prev, isRecommended: v }))}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="is-optional">Optional</Label>
-                    <Switch
-                      id="is-optional"
-                      checked={editForm.isOptional}
-                      onCheckedChange={(v) => setEditForm(prev => ({ ...prev, isOptional: v }))}
-                    />
-                  </div>
-
-                  {/* Parent Group Selection - only show for non-container nodes */}
-                  {!editForm.isContainer && containerNodes.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Parent Group</Label>
-                      <Select
-                        value={editForm.parentId || 'none'}
-                        onValueChange={(v) => setEditForm(prev => ({ ...prev, parentId: v === 'none' ? undefined : v }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="No parent (free floating)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No parent (free floating)</SelectItem>
-                          {containerNodes.map((container) => (
-                            <SelectItem key={container.id} value={container.id}>
-                              {container.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Child nodes move with their parent group
-                      </p>
-                    </div>
-                  )}
+              <div className="mt-6 space-y-4">
+                {/* Title */}
+                <div className="space-y-2">
+                  <Label htmlFor="node-title">Title</Label>
+                  <Input
+                    id="node-title"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  />
                 </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="node-description">Description</Label>
+                  <Textarea
+                    id="node-description"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                    rows={2}
+                  />
+                </div>
+
+                {/* Type and Color */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Type</Label>
+                    <Select
+                      value={editForm.nodeType}
+                      onValueChange={(v) => setEditForm(prev => ({ ...prev, nodeType: v as NodeType }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NODE_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Color</Label>
+                    <Select
+                      value={editForm.color}
+                      onValueChange={(v) => setEditForm(prev => ({ ...prev, color: v as RoadmapNodeColor }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NODE_COLORS.map((color) => (
+                          <SelectItem key={color.value} value={color.value}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded ${color.class}`} />
+                              {color.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Toggles */}
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="is-recommended">Recommended</Label>
+                  <Switch
+                    id="is-recommended"
+                    checked={editForm.isRecommended}
+                    onCheckedChange={(v) => setEditForm(prev => ({ ...prev, isRecommended: v }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="is-optional">Optional</Label>
+                  <Switch
+                    id="is-optional"
+                    checked={editForm.isOptional}
+                    onCheckedChange={(v) => setEditForm(prev => ({ ...prev, isOptional: v }))}
+                  />
+                </div>
+
+                {/* Parent Group Selection */}
+                {!editForm.isContainer && containerNodes.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Parent Group</Label>
+                    <Select
+                      value={editForm.parentId || 'none'}
+                      onValueChange={(v) => setEditForm(prev => ({ ...prev, parentId: v === 'none' ? undefined : v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="No parent (free floating)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No parent (free floating)</SelectItem>
+                        {containerNodes.map((container) => (
+                          <SelectItem key={container.id} value={container.id}>
+                            {container.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <Separator />
 
                 {/* Linked Posts */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-2">
                     <Label className="flex items-center gap-2">
                       <Link2 className="w-4 h-4" />
                       Linked Posts
@@ -612,7 +610,7 @@ export default function AdminRoadmapEditorPage() {
                     <Badge variant="secondary">{linkedPostIds.size}</Badge>
                   </div>
 
-                  <ScrollArea className="h-[200px] border rounded-md p-2">
+                  <div className="h-[120px] border rounded-md p-2 overflow-y-auto">
                     {publishedPosts.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
                         No published posts available.
@@ -634,7 +632,7 @@ export default function AdminRoadmapEditorPage() {
                                 <span className="text-sm truncate">{post.title}</span>
                               </div>
                               {isLinked && (
-                                <Badge variant="default" className="flex-shrink-0">
+                                <Badge variant="default" className="flex-shrink-0 text-xs">
                                   Linked
                                 </Badge>
                               )}
@@ -643,13 +641,13 @@ export default function AdminRoadmapEditorPage() {
                         })}
                       </div>
                     )}
-                  </ScrollArea>
+                  </div>
                 </div>
 
                 <Separator />
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 pb-4">
                   <Button onClick={handleUpdateNode} disabled={isSaving} className="flex-1">
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                     Save
