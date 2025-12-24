@@ -34,6 +34,9 @@ export const Header = () => {
   }, {
     href: '/projects',
     label: 'Projects'
+  }, {
+    href: '/roadmaps',
+    label: 'Roadmaps'
   },
   // Never show Subscribe link on admin pages, and hide it for subscribers
   ...(isSubscribed || isAdminPage ? [] : [{

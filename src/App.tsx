@@ -21,6 +21,10 @@ import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import AdminProjectsPage from "./pages/AdminProjectsPage";
 import AdminDailyProgressPage from "./pages/AdminDailyProgressPage";
+import AdminRoadmapsPage from "./pages/AdminRoadmapsPage";
+import AdminRoadmapEditorPage from "./pages/AdminRoadmapEditorPage";
+import RoadmapsPage from "./pages/RoadmapsPage";
+import RoadmapPage from "./pages/RoadmapPage";
 import NotFound from "./pages/NotFound";
 import { useBlogStore } from "./store/blogStore";
 
@@ -61,6 +65,10 @@ const AppContent = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/projects" element={<AdminProjectsPage />} />
         <Route path="/admin/projects/:id/daily-progress" element={<AdminDailyProgressPage />} />
+        <Route path="/admin/roadmaps" element={<AdminRoadmapsPage />} />
+        <Route path="/admin/roadmaps/:id/edit" element={<AdminRoadmapEditorPage />} />
+        <Route path="/roadmaps" element={<RoadmapsPage />} />
+        <Route path="/roadmaps/:slug" element={<RoadmapPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

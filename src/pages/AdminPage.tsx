@@ -13,11 +13,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useAuth } from '@/contexts/AuthContext';
 import { useSiteSettingsStore } from '@/store/siteSettingsStore';
 import { AdminProjectsSection } from '@/components/admin/AdminProjectsSection';
-import { 
-  FileText, 
-  Plus, 
-  Settings, 
-  Users, 
+import {
+  FileText,
+  Plus,
+  Settings,
+  Users,
   BarChart3,
   Lock,
   Send,
@@ -43,7 +43,8 @@ import {
   Sparkles,
   X,
   History,
-  GitBranch
+  GitBranch,
+  Map
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -1163,6 +1164,12 @@ const AdminPage = () => {
             <TabsTrigger value="projects">
               <GitBranch className="h-4 w-4 mr-2" />
               Projects
+            </TabsTrigger>
+            <TabsTrigger value="roadmaps" asChild>
+              <Link to="/admin/roadmaps" className="flex items-center gap-2">
+                <Map className="h-4 w-4" />
+                Roadmaps
+              </Link>
             </TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
