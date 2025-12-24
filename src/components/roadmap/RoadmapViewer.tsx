@@ -55,8 +55,8 @@ export function RoadmapViewer({
   } = useRoadmapStore();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes] = useNodesState([]);
+  const [edges, setEdges] = useEdgesState([]);
 
   // Fetch roadmap data
   useEffect(() => {
@@ -161,12 +161,10 @@ export function RoadmapViewer({
         </div>
       )}
 
-      {/* React Flow Canvas */}
+      {/* React Flow Canvas - Read Only for public view */}
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         fitView
@@ -175,6 +173,11 @@ export function RoadmapViewer({
         maxZoom={2}
         className={cn(showProgress && 'pt-20')}
         proOptions={{ hideAttribution: true }}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={false}
+        panOnDrag={true}
+        zoomOnScroll={true}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         <Controls showInteractive={false}>
