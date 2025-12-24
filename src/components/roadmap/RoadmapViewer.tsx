@@ -43,6 +43,7 @@ export function RoadmapViewer({
   const {
     currentRoadmap,
     nodes: storeNodes,
+    completedNodes,
     isLoading,
     error,
     fetchRoadmapBySlug,
@@ -63,13 +64,13 @@ export function RoadmapViewer({
     fetchRoadmapBySlug(slug);
   }, [slug, fetchRoadmapBySlug]);
 
-  // Update nodes and edges when store changes
+  // Update nodes and edges when store changes or completion status changes
   useEffect(() => {
     const flowNodes = getFlowNodes();
     const flowEdges = getFlowEdges();
     setNodes(flowNodes as Node[]);
     setEdges(flowEdges as Edge[]);
-  }, [storeNodes, getFlowNodes, getFlowEdges, setNodes, setEdges]);
+  }, [storeNodes, completedNodes, getFlowNodes, getFlowEdges, setNodes, setEdges]);
 
   // Handle node click
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -93,7 +94,7 @@ export function RoadmapViewer({
   const progress = useMemo(() => {
     if (!currentRoadmap) return { completed: 0, total: 0, percentage: 0 };
     return getProgress(currentRoadmap.id);
-  }, [currentRoadmap, getProgress, storeNodes]);
+  }, [currentRoadmap, getProgress, storeNodes, completedNodes]);
 
   // Get selected node data
   const selectedNode = useMemo(() => {
@@ -108,8 +109,8 @@ export function RoadmapViewer({
 
   const isSelectedNodeCompleted = useMemo(() => {
     if (!selectedNodeId) return false;
-    return useRoadmapStore.getState().completedNodes.has(selectedNodeId);
-  }, [selectedNodeId, storeNodes]);
+    return completedNodes.has(selectedNodeId);
+  }, [selectedNodeId, completedNodes]);
 
   if (isLoading) {
     return (
