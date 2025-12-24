@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Map } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Map, Settings2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,8 +40,12 @@ export default function AdminRoadmapsPage() {
   const { roadmaps, isLoading, fetchRoadmaps, createRoadmap, updateRoadmap, deleteRoadmap } = useRoadmapStore();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRoadmap, setEditingRoadmap] = useState<Roadmap | null>(null);
   const [newRoadmap, setNewRoadmap] = useState({ title: '', slug: '', description: '', icon: '' });
+  const [editForm, setEditForm] = useState({ title: '', slug: '', description: '', icon: '' });
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,6 +81,38 @@ export default function AdminRoadmapsPage() {
       toast({ title: 'Failed to create roadmap', variant: 'destructive' });
     }
     setIsCreating(false);
+  };
+
+  const handleOpenEditDialog = (roadmap: Roadmap) => {
+    setEditingRoadmap(roadmap);
+    setEditForm({
+      title: roadmap.title,
+      slug: roadmap.slug,
+      description: roadmap.description || '',
+      icon: roadmap.icon || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateRoadmap = async () => {
+    if (!editingRoadmap) return;
+    if (!editForm.title.trim()) {
+      toast({ title: 'Title is required', variant: 'destructive' });
+      return;
+    }
+
+    setIsUpdating(true);
+    await updateRoadmap(editingRoadmap.id, {
+      title: editForm.title.trim(),
+      slug: editForm.slug.trim() || editForm.title.toLowerCase().replace(/\s+/g, '-'),
+      description: editForm.description.trim() || undefined,
+      icon: editForm.icon.trim() || undefined,
+    });
+
+    toast({ title: 'Roadmap updated!' });
+    setEditDialogOpen(false);
+    setEditingRoadmap(null);
+    setIsUpdating(false);
   };
 
   const handleTogglePublish = async (roadmap: Roadmap) => {
@@ -165,6 +201,65 @@ export default function AdminRoadmapsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Edit Roadmap Dialog */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Roadmap</DialogTitle>
+                <DialogDescription>
+                  Update the roadmap's title, slug, and description.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-title">Title</Label>
+                  <Input
+                    id="edit-title"
+                    placeholder="e.g., DevOps Roadmap"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-slug">Slug (URL path)</Label>
+                  <Input
+                    id="edit-slug"
+                    placeholder="e.g., devops"
+                    value={editForm.slug}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, slug: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    placeholder="Brief description of this roadmap..."
+                    value={editForm.description}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-icon">Icon (Lucide icon name)</Label>
+                  <Input
+                    id="edit-icon"
+                    placeholder="e.g., server, code, database"
+                    value={editForm.icon}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, icon: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateRoadmap} disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </header>
 
         <Card>
@@ -226,10 +321,18 @@ export default function AdminRoadmapsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenEditDialog(roadmap)}
+                      >
+                        <Settings2 className="w-4 h-4 mr-1" />
+                        Settings
+                      </Button>
                       <Link to={`/admin/roadmaps/${roadmap.id}/edit`}>
                         <Button variant="outline" size="sm">
                           <Pencil className="w-4 h-4 mr-1" />
-                          Edit
+                          Edit Nodes
                         </Button>
                       </Link>
                       <AlertDialog>
