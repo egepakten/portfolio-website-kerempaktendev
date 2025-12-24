@@ -57,15 +57,11 @@ export const ContainerNode = memo(({ data, selected }: NodeProps & { data: Conta
   return (
     <div
       className={cn(
-        'rounded-xl border-2 border-dashed min-w-[200px] min-h-[150px] overflow-hidden',
+        'rounded-xl border-2 border-dashed min-w-[200px] min-h-[150px] overflow-hidden w-full h-full',
         colors.bg,
         colors.border,
         selected && 'ring-2 ring-blue-500'
       )}
-      style={{
-        width: data.width || 300,
-        height: data.height || 200,
-      }}
     >
       <NodeResizer
         minWidth={200}

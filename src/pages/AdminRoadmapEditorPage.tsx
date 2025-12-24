@@ -188,17 +188,25 @@ export default function AdminRoadmapEditorPage() {
     }
   }, [createConnection]);
 
-  // Handle node position change
+  // Handle node position and dimension changes
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     setNodes((nds) => applyNodeChanges(changes, nds) as Node[]);
 
-    // Save position changes to database
+    // Save position and dimension changes to database
     changes.forEach(async (change) => {
       if (change.type === 'position' && change.position && change.dragging === false) {
         const nodeId = change.id;
         await updateNode(nodeId, {
           positionX: change.position.x,
           positionY: change.position.y,
+        });
+      }
+      // Handle resize changes (dimensions)
+      if (change.type === 'dimensions' && change.dimensions && change.resizing === false) {
+        const nodeId = change.id;
+        await updateNode(nodeId, {
+          width: change.dimensions.width,
+          height: change.dimensions.height,
         });
       }
     });

@@ -87,56 +87,57 @@
   .dark {
     --primary: 142 70% 45%;
     --primary-foreground: 0 0% 100%;
-    
-    --background: 24 10% 10%;
-    --foreground: 30 20% 98%;
-    
-    --card: 24 8% 14%;
-    --card-foreground: 30 20% 98%;
-    
-    --popover: 24 8% 14%;
-    --popover-foreground: 30 20% 98%;
-    
-    --secondary: 24 8% 18%;
-    --secondary-foreground: 30 20% 98%;
-    
-    --muted: 24 8% 18%;
-    --muted-foreground: 24 5% 60%;
-    
+
+    /* Navy blue backgrounds */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 15%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 15%;
+    --popover-foreground: 210 40% 98%;
+
+    --secondary: 222 47% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 47% 18%;
+    --muted-foreground: 215 20% 65%;
+
     --accent: 142 30% 20%;
     --accent-foreground: 142 70% 70%;
-    
+
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
-    
-    --border: 24 8% 20%;
-    --input: 24 8% 20%;
+
+    --border: 222 47% 22%;
+    --input: 222 47% 22%;
     --ring: 142 70% 45%;
-    
-    --sidebar-background: 24 10% 8%;
-    --sidebar-foreground: 30 20% 98%;
+
+    --sidebar-background: 222 47% 9%;
+    --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 142 70% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 142 30% 20%;
     --sidebar-accent-foreground: 142 70% 70%;
-    --sidebar-border: 24 8% 20%;
+    --sidebar-border: 222 47% 22%;
     --sidebar-ring: 142 70% 45%;
-    
+
     --chart-1: 142 70% 55%;
     --chart-2: 199 80% 55%;
     --chart-3: 280 55% 65%;
     --chart-4: 43 90% 60%;
     --chart-5: 0 65% 55%;
-    
+
     --accent-blue: 214 60% 25%;
     --accent-purple: 270 50% 25%;
     --accent-amber: 48 60% 25%;
     --accent-rose: 0 50% 25%;
     --accent-cyan: 183 50% 25%;
     --accent-sage: 142 30% 25%;
-    
-    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3), 0 4px 16px -4px hsl(0 0% 0% / 0.25);
-    --shadow-medium: 0 4px 12px -2px hsl(0 0% 0% / 0.4), 0 8px 24px -4px hsl(0 0% 0% / 0.3);
+
+    --shadow-soft: 0 2px 8px -2px hsl(222 47% 5% / 0.4), 0 4px 16px -4px hsl(222 47% 5% / 0.35);
+    --shadow-medium: 0 4px 12px -2px hsl(222 47% 5% / 0.5), 0 8px 24px -4px hsl(222 47% 5% / 0.4);
     --shadow-glow: 0 0 24px hsl(142 70% 45% / 0.2);
   }
 }
