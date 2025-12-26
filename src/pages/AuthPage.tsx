@@ -32,6 +32,50 @@ const ALLOWED_EMAIL_DOMAINS = [
   'fastmail.com',
 ];
 
+// List of inappropriate words to block in usernames
+const INAPPROPRIATE_WORDS = [
+  'fuck', 'shit', 'damn', 'hell', 'bastard', 'bitch', 'ass', 'dick', 'cock',
+  'pussy', 'cunt', 'fag', 'nigger', 'nigga', 'retard', 'whore', 'slut',
+  'admin', 'moderator', 'support', 'official', 'system', 'bot', 'test',
+];
+
+const validateUsername = (username: string): { valid: boolean; message?: string } => {
+  if (!username || username.trim().length === 0) {
+    return { valid: false, message: 'Display name is required' };
+  }
+
+  // Check length
+  if (username.length < 2) {
+    return { valid: false, message: 'Display name must be at least 2 characters' };
+  }
+
+  if (username.length > 30) {
+    return { valid: false, message: 'Display name must be less than 30 characters' };
+  }
+
+  // Check for excessive special characters (allow basic punctuation like spaces, hyphens, apostrophes)
+  const specialCharPattern = /[^a-zA-Z0-9\s\-'\.]/;
+  if (specialCharPattern.test(username)) {
+    return {
+      valid: false,
+      message: 'Display name can only contain letters, numbers, spaces, hyphens, and apostrophes',
+    };
+  }
+
+  // Check for inappropriate words
+  const lowerUsername = username.toLowerCase();
+  for (const word of INAPPROPRIATE_WORDS) {
+    if (lowerUsername.includes(word)) {
+      return {
+        valid: false,
+        message: 'Display name contains inappropriate content. Please choose a different name.',
+      };
+    }
+  }
+
+  return { valid: true };
+};
+
 const validateEmail = (email: string): { valid: boolean; message?: string } => {
   // Basic email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,6 +98,55 @@ const validateEmail = (email: string): { valid: boolean; message?: string } => {
   }
 
   return { valid: true };
+};
+
+const checkPasswordStrength = (password: string): { score: number; message: string; color: string } => {
+  if (!password) {
+    return { score: 0, message: '', color: '' };
+  }
+
+  let score = 0;
+  const checks = {
+    length: password.length >= 8,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+
+  // Calculate score
+  if (checks.length) score++;
+  if (checks.lowercase) score++;
+  if (checks.uppercase) score++;
+  if (checks.number) score++;
+  if (checks.special) score++;
+
+  // Determine strength level
+  if (score <= 2) {
+    return {
+      score,
+      message: 'Weak password. Add uppercase, numbers, and special characters.',
+      color: 'bg-red-500'
+    };
+  } else if (score === 3) {
+    return {
+      score,
+      message: 'Fair password. Consider adding more variety.',
+      color: 'bg-orange-500'
+    };
+  } else if (score === 4) {
+    return {
+      score,
+      message: 'Good password. Well protected!',
+      color: 'bg-yellow-500'
+    };
+  } else {
+    return {
+      score,
+      message: 'Strong password. Excellent!',
+      color: 'bg-emerald-500'
+    };
+  }
 };
 
 const AuthPage = () => {
@@ -84,6 +177,16 @@ const AuthPage = () => {
   // Email validation state for signup
   const [emailValidationMessage, setEmailValidationMessage] = useState<string>('');
 
+  // Username validation state
+  const [usernameValidationMessage, setUsernameValidationMessage] = useState<string>('');
+
+  // Password strength state
+  const [passwordStrength, setPasswordStrength] = useState<{
+    score: number;
+    message: string;
+    color: string;
+  }>({ score: 0, message: '', color: '' });
+
   useEffect(() => {
     if (user) {
       navigate('/');
@@ -100,6 +203,21 @@ const AuthPage = () => {
     }
   }, [prefilledEmail, prefilledName]);
 
+  // Validate username when user changes it
+  const handleUsernameChange = (username: string) => {
+    setSignupUsername(username);
+    if (username) {
+      const validation = validateUsername(username);
+      if (!validation.valid) {
+        setUsernameValidationMessage(validation.message || '');
+      } else {
+        setUsernameValidationMessage('');
+      }
+    } else {
+      setUsernameValidationMessage('');
+    }
+  };
+
   // Validate email when user changes it
   const handleEmailChange = (email: string) => {
     setSignupEmail(email);
@@ -113,6 +231,13 @@ const AuthPage = () => {
     } else {
       setEmailValidationMessage('');
     }
+  };
+
+  // Check password strength when user changes it
+  const handlePasswordChange = (password: string) => {
+    setSignupPassword(password);
+    const strength = checkPasswordStrength(password);
+    setPasswordStrength(strength);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -142,6 +267,13 @@ const AuthPage = () => {
     e.preventDefault();
     if (!signupEmail || !signupPassword || !signupUsername) {
       toast.error('Please fill in all fields');
+      return;
+    }
+
+    // Validate username
+    const usernameValidation = validateUsername(signupUsername);
+    if (!usernameValidation.valid) {
+      toast.error(usernameValidation.message || 'Invalid display name');
       return;
     }
 
@@ -252,10 +384,22 @@ const AuthPage = () => {
                           type="text"
                           placeholder="Your name"
                           value={signupUsername}
-                          onChange={(e) => setSignupUsername(e.target.value)}
+                          onChange={(e) => handleUsernameChange(e.target.value)}
                           className="pl-10"
                         />
                       </div>
+                      {usernameValidationMessage && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-start gap-2 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-600 dark:text-red-400"
+                        >
+                          <User className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm font-medium leading-relaxed">
+                            {usernameValidationMessage}
+                          </p>
+                        </motion.div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
@@ -292,7 +436,7 @@ const AuthPage = () => {
                           type={showSignupPassword ? "text" : "password"}
                           placeholder="••••••••"
                           value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
+                          onChange={(e) => handlePasswordChange(e.target.value)}
                           className="pl-10 pr-10"
                         />
                         <button
@@ -307,6 +451,34 @@ const AuthPage = () => {
                           )}
                         </button>
                       </div>
+                      {passwordStrength.message && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-2"
+                        >
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((level) => (
+                              <div
+                                key={level}
+                                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                                  level <= passwordStrength.score
+                                    ? passwordStrength.color
+                                    : 'bg-gray-200 dark:bg-gray-700'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <p className={`text-sm font-medium ${
+                            passwordStrength.score <= 2 ? 'text-red-600 dark:text-red-400' :
+                            passwordStrength.score === 3 ? 'text-orange-600 dark:text-orange-400' :
+                            passwordStrength.score === 4 ? 'text-yellow-600 dark:text-yellow-400' :
+                            'text-emerald-600 dark:text-emerald-400'
+                          }`}>
+                            {passwordStrength.message}
+                          </p>
+                        </motion.div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <input
