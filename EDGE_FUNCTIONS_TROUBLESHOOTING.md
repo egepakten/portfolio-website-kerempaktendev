@@ -46,6 +46,8 @@ Set these in your Supabase Dashboard:
 2. Add the following:
    - `RESEND_API_KEY` - Your Resend API key (required)
    - `SITE_URL` - Your website URL (optional, defaults to https://kerempakten.dev)
+   - `SUPABASE_URL` - Your Supabase project URL (for subscriber count)
+   - `SUPABASE_SERVICE_ROLE_KEY` - Service role key (for subscriber count)
 
 ## Testing
 

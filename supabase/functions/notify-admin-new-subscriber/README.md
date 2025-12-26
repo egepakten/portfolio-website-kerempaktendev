@@ -4,12 +4,18 @@ This Supabase Edge Function sends an email notification to the admin (egepakten@
 
 ## Setup
 
-1. Make sure you have the `RESEND_API_KEY` environment variable set in your Supabase project
+1. Make sure you have these environment variables set in your Supabase project:
+   - `RESEND_API_KEY` - For sending emails
+   - `SUPABASE_URL` - Your Supabase project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` - For counting subscribers
+
 2. Deploy the function:
 
 ```bash
 supabase functions deploy notify-admin-new-subscriber
 ```
+
+After deployment, set the environment variables in Supabase Dashboard → Edge Functions → Secrets
 
 ## Usage
 

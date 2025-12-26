@@ -93,9 +93,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   .maybeSingle();
                 
                 if (profileData) {
-                  // Send welcome email and notify admin
+                  // Send welcome email only (admin notification is sent in signUp function)
                   sendWelcomeEmail(session.user.email!, profileData.username);
-                  notifyAdminNewSubscriber(session.user.email!, profileData.username);
                 }
                 
                 // Clean up after 10 minutes

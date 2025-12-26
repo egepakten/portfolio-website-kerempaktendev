@@ -31,12 +31,31 @@ serve(async (req: Request): Promise<Response> => {
 
     const adminEmail = "egepakten@icloud.com";
     const siteUrl = Deno.env.get("SITE_URL") || "https://kerempakten.dev";
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const displayName = subscriberName || "Anonymous";
     const subscribedAt = new Date().toLocaleString('en-US', {
       timeZone: 'UTC',
       dateStyle: 'full',
       timeStyle: 'long'
     });
+
+    // Get total subscriber count (only verified emails)
+    let totalSubscribers = 0;
+    if (supabaseUrl && supabaseServiceKey) {
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/subscriptions?select=count&is_active=eq.true`, {
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          }
+        });
+        const data = await response.json();
+        totalSubscribers = data.length || 0;
+      } catch (error) {
+        console.error('Error fetching subscriber count:', error);
+      }
+    }
 
     const emailResponse = await resend.emails.send({
       from: "Blog Notifications <noreply@kerempakten.dev>",
@@ -84,13 +103,11 @@ serve(async (req: Request): Promise<Response> => {
                       <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600;">Subscribed:</td>
                       <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 500;">${subscribedAt}</td>
                     </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600;">Total Subscribers:</td>
+                      <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 500;">${totalSubscribers} active</td>
+                    </tr>
                   </table>
-                </div>
-
-                <div style="text-align: center; margin: 32px 0;">
-                  <a href="${siteUrl}/admin/subscribers" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                    View All Subscribers
-                  </a>
                 </div>
 
                 <p style="margin: 24px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6; text-align: center;">
