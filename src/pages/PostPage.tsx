@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { PostContent } from '@/components/blog/PostContent';
@@ -9,9 +9,10 @@ import { PostLikes } from '@/components/blog/PostLikes';
 import { PostComments } from '@/components/blog/PostComments';
 import { useBlogStore } from '@/store/blogStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Clock, Calendar, Share2, Twitter, Linkedin, Link as LinkIcon, Hash, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Share2, Twitter, Linkedin, Link as LinkIcon, Hash, Loader2, Lock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -20,8 +21,9 @@ const PostPage = () => {
   const getPostBySlug = useBlogStore((state) => state.getPostBySlug);
   const posts = useBlogStore((state) => state.posts);
   const isLoading = useBlogStore((state) => state.isLoading);
-  const { subscription } = useAuth();
+  const { user, subscription, loading: authLoading } = useAuth();
   const isSubscribed = subscription?.is_active;
+  const navigate = useNavigate();
   const post = slug ? getPostBySlug(slug) : undefined;
 
   // Show loading state while data is being fetched
@@ -84,6 +86,10 @@ const PostPage = () => {
       </Layout>
     );
   }
+
+  // Check if this is a subscriber-only post and user doesn't have access
+  const isSubscriberOnlyPost = post.isSubscriberOnly;
+  const hasAccess = !isSubscriberOnlyPost || (user && isSubscribed);
 
   // Get related posts (same category, different post)
   const relatedPosts = posts.filter(p => 
@@ -222,8 +228,70 @@ const PostPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
+                className="relative"
               >
-                <PostContent content={post.content} />
+                {!hasAccess ? (
+                  <div className="relative min-h-[600px]">
+                    {/* Blurred preview content */}
+                    <div className="blur-md select-none pointer-events-none">
+                      <PostContent content={post.content} />
+                    </div>
+
+                    {/* Lock overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-md">
+                      <Card className="max-w-md border-2 shadow-xl">
+                        <CardHeader className="text-center pb-6">
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4">
+                            <Lock className="w-8 h-8 text-primary" />
+                          </div>
+                          <CardTitle className="text-2xl font-serif mb-2">
+                            Subscriber-Only Content
+                          </CardTitle>
+                          <CardDescription className="text-base">
+                            This post is exclusive to newsletter subscribers
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="bg-muted/50 rounded-lg p-4">
+                            <p className="text-sm text-muted-foreground">
+                              Subscribe to unlock this post and get access to all subscriber-only content,
+                              plus weekly updates when new posts are published.
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Button
+                              className="flex-1"
+                              size="lg"
+                              onClick={() => navigate('/auth?tab=signup')}
+                            >
+                              <Mail className="w-4 h-4 mr-2" />
+                              Subscribe to Read
+                            </Button>
+                            {!user && (
+                              <Button
+                                variant="outline"
+                                size="lg"
+                                className="flex-1"
+                                onClick={() => navigate('/auth?tab=login')}
+                              >
+                                Already Subscribed? Sign In
+                              </Button>
+                            )}
+                          </div>
+
+                          {user && !isSubscribed && (
+                            <p className="text-sm text-center text-muted-foreground pt-2">
+                              You're signed in but not subscribed. Subscribe to unlock!
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ) : (
+                  <PostContent content={post.content} />
+                )}
               </motion.div>
 
               {/* Share */}

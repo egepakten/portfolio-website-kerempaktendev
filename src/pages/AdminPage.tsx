@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSiteSettingsStore } from '@/store/siteSettingsStore';
 import { AdminProjectsSection } from '@/components/admin/AdminProjectsSection';
@@ -102,6 +103,7 @@ interface Post {
   created_at: string;
   last_notified_at: string | null;
   notified_subscriber_count: number | null;
+  is_subscriber_only: boolean | null;
 }
 
 interface Subscriber {
@@ -166,6 +168,8 @@ const AdminPage = () => {
     excerpt: '',
     content: '',
     category_id: '',
+    is_subscriber_only: false,
+    notify_subscribers: true, // Default to true (notify by default)
   });
 
   const [newCategory, setNewCategory] = useState({
@@ -580,6 +584,7 @@ const AdminPage = () => {
             category_id: newPost.category_id || null,
             cover_image: coverImage || null,
             status: 'draft',
+            is_subscriber_only: newPost.is_subscriber_only,
           })
           .eq('id', editingPost.id);
 
@@ -598,6 +603,7 @@ const AdminPage = () => {
             category_id: newPost.category_id || null,
             cover_image: coverImage || null,
             status: 'draft',
+            is_subscriber_only: newPost.is_subscriber_only,
           })
           .select('id')
           .single();
@@ -652,6 +658,7 @@ const AdminPage = () => {
             cover_image: coverImage || null,
             status: 'published',
             published_at: new Date().toISOString(),
+            is_subscriber_only: newPost.is_subscriber_only,
           })
           .eq('id', editingPost.id);
 
@@ -671,6 +678,7 @@ const AdminPage = () => {
             cover_image: coverImage || null,
             status: 'published',
             published_at: new Date().toISOString(),
+            is_subscriber_only: newPost.is_subscriber_only,
           })
           .select('id')
           .single();
@@ -685,28 +693,30 @@ const AdminPage = () => {
         await savePostTags(postId);
       }
 
-      // Auto-notify subscribers for newly published posts
-      try {
-        const category = categories.find(c => c.id === newPost.category_id);
+      // Auto-notify subscribers for newly published posts (only if toggle is enabled)
+      if (newPost.notify_subscribers) {
+        try {
+          const category = categories.find(c => c.id === newPost.category_id);
 
-        const { error: notifyError } = await supabase.functions.invoke('notify-subscribers', {
-          body: {
-            postId,
-            postTitle: newPost.title,
-            postExcerpt: newPost.excerpt || '',
-            postSlug: newPost.slug,
-            postCoverImage: coverImage || '',
-            postCategory: category?.name || '',
-          },
-        });
+          const { error: notifyError } = await supabase.functions.invoke('notify-subscribers', {
+            body: {
+              postId,
+              postTitle: newPost.title,
+              postExcerpt: newPost.excerpt || '',
+              postSlug: newPost.slug,
+              postCoverImage: coverImage || '',
+              postCategory: category?.name || '',
+            },
+          });
 
-        if (notifyError) {
+          if (notifyError) {
+            console.error('Failed to notify subscribers:', notifyError);
+            toast.warning('Post published, but sending notification emails failed.');
+          }
+        } catch (notifyError) {
           console.error('Failed to notify subscribers:', notifyError);
           toast.warning('Post published, but sending notification emails failed.');
         }
-      } catch (notifyError) {
-        console.error('Failed to notify subscribers:', notifyError);
-        toast.warning('Post published, but sending notification emails failed.');
       }
 
       resetForm();
@@ -728,6 +738,8 @@ const AdminPage = () => {
       excerpt: post.excerpt || '',
       content: post.content || '',
       category_id: post.category_id || '',
+      is_subscriber_only: post.is_subscriber_only || false,
+      notify_subscribers: true, // Reset to true for editing
     });
     setCoverImage(post.cover_image || '');
 
@@ -764,7 +776,7 @@ const AdminPage = () => {
   };
 
   const resetForm = () => {
-    setNewPost({ title: '', slug: '', excerpt: '', content: '', category_id: '' });
+    setNewPost({ title: '', slug: '', excerpt: '', content: '', category_id: '', is_subscriber_only: false, notify_subscribers: true });
     setEditingPost(null);
     setShowPreview(false);
     setCoverImage('');
@@ -1339,6 +1351,42 @@ const AdminPage = () => {
                       onChange={(e) => setNewPost({ ...newPost, excerpt: e.target.value })}
                       placeholder="Brief description of the post"
                       rows={2}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="subscriber-only" className="text-base">
+                        Subscriber-Only Post
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Only active subscribers can view the full content
+                      </p>
+                    </div>
+                    <Switch
+                      id="subscriber-only"
+                      checked={newPost.is_subscriber_only}
+                      onCheckedChange={(checked) =>
+                        setNewPost({ ...newPost, is_subscriber_only: checked })
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="notify-subscribers" className="text-base">
+                        Notify Subscribers
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Send email notifications when publishing this post
+                      </p>
+                    </div>
+                    <Switch
+                      id="notify-subscribers"
+                      checked={newPost.notify_subscribers}
+                      onCheckedChange={(checked) =>
+                        setNewPost({ ...newPost, notify_subscribers: checked })
+                      }
                     />
                   </div>
 

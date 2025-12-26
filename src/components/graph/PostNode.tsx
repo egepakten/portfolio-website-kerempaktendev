@@ -1,12 +1,13 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { FileText } from 'lucide-react';
+import { FileText, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface PostNodeData {
   label: string;
   slug: string;
   color: string;
+  isSubscriberOnly?: boolean;
 }
 
 interface PostNodeProps {
@@ -76,13 +77,24 @@ export const PostNode = memo(({ data }: PostNodeProps) => {
         ${colors.bg} ${colors.border}
         shadow-soft hover:shadow-medium transition-all duration-200
         hover:-translate-y-0.5
-        max-w-[180px] text-center
+        max-w-[180px] text-center relative
       `}
     >
       <Handle type="target" position={Position.Top} className="!bg-border" />
 
+      {data.isSubscriberOnly && (
+        <div className="flex items-center justify-center gap-1 mb-2">
+          <Lock className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground uppercase">Subscriber Only</span>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
-        <FileText className={`h-4 w-4 flex-shrink-0 ${colors.text}`} />
+        {data.isSubscriberOnly ? (
+          <Lock className={`h-4 w-4 flex-shrink-0 ${colors.text}`} />
+        ) : (
+          <FileText className={`h-4 w-4 flex-shrink-0 ${colors.text}`} />
+        )}
         <span className="text-xs font-medium text-foreground line-clamp-2 text-left">
           {data.label}
         </span>

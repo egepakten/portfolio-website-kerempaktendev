@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 
 // List of allowed email domains for signup
 const ALLOWED_EMAIL_DOMAINS = [
@@ -77,6 +77,13 @@ const AuthPage = () => {
   const [signupUsername, setSignupUsername] = useState(prefilledName);
   const [isGuest, setIsGuest] = useState(false);
 
+  // Password visibility toggles
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+
+  // Email validation state for signup
+  const [emailValidationMessage, setEmailValidationMessage] = useState<string>('');
+
   useEffect(() => {
     if (user) {
       navigate('/');
@@ -92,6 +99,21 @@ const AuthPage = () => {
       setSignupUsername(prefilledName);
     }
   }, [prefilledEmail, prefilledName]);
+
+  // Validate email when user changes it
+  const handleEmailChange = (email: string) => {
+    setSignupEmail(email);
+    if (email) {
+      const validation = validateEmail(email);
+      if (!validation.valid) {
+        setEmailValidationMessage(validation.message || '');
+      } else {
+        setEmailValidationMessage('');
+      }
+    } else {
+      setEmailValidationMessage('');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,12 +216,23 @@ const AuthPage = () => {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="login-password"
-                          type="password"
+                          type={showLoginPassword ? "text" : "password"}
                           placeholder="••••••••"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-10"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showLoginPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
                       </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
@@ -233,10 +266,22 @@ const AuthPage = () => {
                           type="email"
                           placeholder="you@example.com"
                           value={signupEmail}
-                          onChange={(e) => setSignupEmail(e.target.value)}
+                          onChange={(e) => handleEmailChange(e.target.value)}
                           className="pl-10"
                         />
                       </div>
+                      {emailValidationMessage && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-start gap-2 p-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400"
+                        >
+                          <Mail className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm font-medium leading-relaxed">
+                            {emailValidationMessage}
+                          </p>
+                        </motion.div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
@@ -244,12 +289,23 @@ const AuthPage = () => {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signup-password"
-                          type="password"
+                          type={showSignupPassword ? "text" : "password"}
                           placeholder="••••••••"
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-10"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowSignupPassword(!showSignupPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showSignupPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

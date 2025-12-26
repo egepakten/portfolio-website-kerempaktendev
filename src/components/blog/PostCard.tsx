@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Clock, Hash } from 'lucide-react';
+import { Clock, Hash, Lock } from 'lucide-react';
 import { Post } from '@/types';
 import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PostCardProps {
   post: Post;
@@ -9,6 +11,10 @@ interface PostCardProps {
 }
 
 export const PostCard = ({ post, index = 0 }: PostCardProps) => {
+  const { user, subscription } = useAuth();
+  const isSubscribed = user && subscription?.is_active;
+  const hasAccess = !post.isSubscriberOnly || isSubscribed;
+
   const formattedDate = post.publishedAt
     ? new Date(post.publishedAt).toLocaleDateString('en-US', {
         month: 'short',
@@ -17,6 +23,9 @@ export const PostCard = ({ post, index = 0 }: PostCardProps) => {
       })
     : '';
 
+  // Determine the link destination
+  const linkTo = hasAccess ? `/posts/${post.slug}` : '/auth?tab=signup';
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
@@ -24,7 +33,7 @@ export const PostCard = ({ post, index = 0 }: PostCardProps) => {
       transition={{ duration: 0.4, delay: index * 0.1 }}
       className="group"
     >
-      <Link to={`/posts/${post.slug}`} className="block">
+      <Link to={linkTo} className="block">
         <div className="bg-card rounded-xl border border-border overflow-hidden shadow-soft hover:shadow-medium transition-all duration-300 group-hover:-translate-y-1">
           {post.coverImage && (
             <div className="aspect-[16/9] overflow-hidden">
@@ -36,12 +45,20 @@ export const PostCard = ({ post, index = 0 }: PostCardProps) => {
             </div>
           )}
           <div className="p-6">
-            {/* Category */}
-            {post.category && (
-              <span className="tag-pill tag-pill-blue mb-3">
-                {post.category.name}
-              </span>
-            )}
+            {/* Category and Subscriber Badge */}
+            <div className="flex items-center gap-2 mb-3">
+              {post.category && (
+                <span className="tag-pill tag-pill-blue">
+                  {post.category.name}
+                </span>
+              )}
+              {post.isSubscriberOnly && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Subscriber Only
+                </Badge>
+              )}
+            </div>
 
             {/* Title */}
             <h3 className="font-serif text-xl font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">

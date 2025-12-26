@@ -100,6 +100,7 @@ export const useBlogStore = create<BlogState>((set, get) => ({
         status: (p.status as 'draft' | 'published') || 'draft',
         createdAt: p.created_at,
         updatedAt: p.updated_at,
+        isSubscriberOnly: p.is_subscriber_only || false,
       }));
 
       set({ categories, posts, tags, isLoading: false });

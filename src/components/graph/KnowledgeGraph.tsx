@@ -15,6 +15,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { useNavigate } from 'react-router-dom';
 import { useBlogStore } from '@/store/blogStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { CategoryNode } from './CategoryNode';
 import { PostNode } from './PostNode';
 
@@ -45,6 +46,8 @@ const KnowledgeGraphInner = ({
   resetTrigger = 0,
 }: KnowledgeGraphInnerProps) => {
   const navigate = useNavigate();
+  const { user, subscription } = useAuth();
+  const isSubscribed = user && subscription?.is_active;
   const { fitView, setCenter, getZoom } = useReactFlow();
   const categories = useBlogStore((state) => state.categories);
   const posts = useBlogStore((state) => state.posts);
@@ -280,6 +283,7 @@ const KnowledgeGraphInner = ({
             label: shortenTitle(post.title, 35),
             slug: post.slug,
             color: category.color,
+            isSubscriberOnly: post.isSubscriberOnly || false,
           },
         });
       });
@@ -376,10 +380,15 @@ const KnowledgeGraphInner = ({
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
-      const data = node.data as { slug: string };
+      const data = node.data as { slug: string; isSubscriberOnly?: boolean };
       if (node.type === 'post') {
-        // Post node - navigate to the post
-        navigate(`/posts/${data.slug}`);
+        // Post node - check if subscriber-only and user doesn't have access
+        const hasAccess = !data.isSubscriberOnly || isSubscribed;
+        if (hasAccess) {
+          navigate(`/posts/${data.slug}`);
+        } else {
+          navigate('/auth?tab=signup');
+        }
       } else {
         // Category node - toggle expand/collapse
         setExpandedCategories(prev => {
@@ -396,7 +405,7 @@ const KnowledgeGraphInner = ({
         // This prevents the node from being filtered out
       }
     },
-    [navigate]
+    [navigate, isSubscribed]
   );
 
   return (

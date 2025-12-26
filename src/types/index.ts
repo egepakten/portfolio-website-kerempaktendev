@@ -32,6 +32,7 @@ export interface Post {
   publishedAt?: string;
   createdAt: string;
   updatedAt?: string;
+  isSubscriberOnly?: boolean;
 }
 
 export interface Subscriber {
