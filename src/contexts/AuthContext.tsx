@@ -93,8 +93,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   .maybeSingle();
                 
                 if (profileData) {
-                  // Send welcome email
+                  // Send welcome email and notify admin
                   sendWelcomeEmail(session.user.email!, profileData.username);
+                  notifyAdminNewSubscriber(session.user.email!, profileData.username);
                 }
                 
                 // Clean up after 10 minutes
@@ -191,6 +192,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const notifyAdminNewSubscriber = async (email: string, username?: string) => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Missing Supabase configuration for admin notification');
+        return;
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/notify-admin-new-subscriber`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          subscriberEmail: email,
+          subscriberName: username
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error notifying admin:', errorData);
+      } else {
+        console.log('Admin notified about new subscriber:', email);
+      }
+    } catch (error) {
+      console.error('Error calling notify-admin-new-subscriber Edge Function:', error);
+      // Don't throw error - notification failure shouldn't block sign-up
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
@@ -214,12 +250,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userId = data.user.id;
       // Mark this user so onAuthStateChange doesn't send duplicate email
       recentSignUpsRef.current.add(userId);
-      
-      // Send welcome email after a short delay to ensure profile is created
+
+      // Send welcome email and notify admin after a short delay to ensure profile is created
       setTimeout(() => {
         sendWelcomeEmail(email, username);
+        notifyAdminNewSubscriber(email, username);
       }, 1500);
-      
+
       // Clean up after 10 minutes
       setTimeout(() => {
         recentSignUpsRef.current.delete(userId);
