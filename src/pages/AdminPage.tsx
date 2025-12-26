@@ -44,7 +44,8 @@ import {
   X,
   History,
   GitBranch,
-  Map
+  Map,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -141,6 +142,7 @@ const AdminPage = () => {
   const [deletedAccounts, setDeletedAccounts] = useState<DeletedAccount[]>([]);
   const [subscriberCount, setSubscriberCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncingSubscribers, setIsSyncingSubscribers] = useState(false);
   const [isNotifying, setIsNotifying] = useState<string | null>(null);
   const [isSendingTestEmail, setIsSendingTestEmail] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -307,15 +309,22 @@ const AdminPage = () => {
       .from('subscribers')
       .select('*')
       .order('subscribed_at', { ascending: false });
-    
+
     if (error) {
       console.error('Error fetching subscribers:', error);
     }
-    
+
     if (data) {
       setSubscribers(data);
       setSubscriberCount(data.filter(s => s.is_active).length);
     }
+  };
+
+  const handleSyncSubscribers = async () => {
+    setIsSyncingSubscribers(true);
+    await fetchSubscribers();
+    setIsSyncingSubscribers(false);
+    toast.success('Subscribers refreshed');
   };
 
   const fetchTags = async () => {
@@ -1844,11 +1853,25 @@ const AdminPage = () => {
           <TabsContent value="subscribers">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Subscribers ({subscriberCount} active)
-                </CardTitle>
-                <CardDescription>People subscribed to your newsletter</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Subscribers ({subscriberCount} active)
+                    </CardTitle>
+                    <CardDescription>People subscribed to your newsletter</CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSyncSubscribers}
+                    disabled={isSyncingSubscribers}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isSyncingSubscribers ? 'animate-spin' : ''}`} />
+                    {isSyncingSubscribers ? 'Syncing...' : 'Sync'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {subscribers.length === 0 ? (
