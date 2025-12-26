@@ -11,6 +11,51 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2, Mail, Lock, User } from 'lucide-react';
 
+// List of allowed email domains for signup
+const ALLOWED_EMAIL_DOMAINS = [
+  'gmail.com',
+  'icloud.com',
+  'outlook.com',
+  'hotmail.com',
+  'yahoo.com',
+  'protonmail.com',
+  'proton.me',
+  'live.com',
+  'me.com',
+  'mac.com',
+  'aol.com',
+  'zoho.com',
+  'yandex.com',
+  'gmx.com',
+  'mail.com',
+  'tutanota.com',
+  'fastmail.com',
+];
+
+const validateEmail = (email: string): { valid: boolean; message?: string } => {
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { valid: false, message: 'Please enter a valid email address' };
+  }
+
+  // Extract domain from email
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) {
+    return { valid: false, message: 'Please enter a valid email address' };
+  }
+
+  // Check if domain is in allowed list
+  if (!ALLOWED_EMAIL_DOMAINS.includes(domain)) {
+    return {
+      valid: false,
+      message: `Please use an email from a recognized provider (e.g., Gmail, iCloud, Outlook, Yahoo)`,
+    };
+  }
+
+  return { valid: true };
+};
+
 const AuthPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -75,6 +120,13 @@ const AuthPage = () => {
     e.preventDefault();
     if (!signupEmail || !signupPassword || !signupUsername) {
       toast.error('Please fill in all fields');
+      return;
+    }
+
+    // Validate email domain
+    const emailValidation = validateEmail(signupEmail);
+    if (!emailValidation.valid) {
+      toast.error(emailValidation.message || 'Invalid email');
       return;
     }
 

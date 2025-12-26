@@ -108,24 +108,40 @@ const CodeBlock = ({ children, className, ...props }: React.HTMLAttributes<HTMLE
   }
 
   return (
-    <div className="relative group">
+    <div className="relative group my-4">
       {language && (
-        <span className="absolute top-3 left-4 text-xs text-muted-foreground font-mono">
-          {language}
-        </span>
+        <div className="flex items-center justify-between bg-secondary/50 border border-border rounded-t-lg px-4 py-2 -mb-1">
+          <span className="text-xs text-muted-foreground font-mono">
+            {language}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-60 hover:opacity-100 transition-opacity"
+            onClick={handleCopy}
+          >
+            {copied ? (
+              <Check className="h-3 w-3 text-primary" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
       )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={handleCopy}
-      >
-        {copied ? (
-          <Check className="h-4 w-4 text-primary" />
-        ) : (
-          <Copy className="h-4 w-4" />
-        )}
-      </Button>
+      {!language && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-primary" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </Button>
+      )}
       <code className={className} {...props}>
         {children}
       </code>
