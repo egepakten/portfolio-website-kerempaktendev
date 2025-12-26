@@ -40,18 +40,32 @@ serve(async (req: Request): Promise<Response> => {
       timeStyle: 'long'
     });
 
-    // Get total subscriber count (only verified emails)
+    // Get total subscriber count (only verified/active emails)
     let totalSubscribers = 0;
     if (supabaseUrl && supabaseServiceKey) {
       try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/subscriptions?select=count&is_active=eq.true`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/subscriptions?is_active=eq.true&select=*`, {
           headers: {
             'apikey': supabaseServiceKey,
             'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Prefer': 'count=exact'
           }
         });
-        const data = await response.json();
-        totalSubscribers = data.length || 0;
+
+        if (response.ok) {
+          // Get count from Content-Range header
+          const contentRange = response.headers.get('content-range');
+          if (contentRange) {
+            const match = contentRange.match(/\/(\d+)$/);
+            if (match) {
+              totalSubscribers = parseInt(match[1], 10);
+            }
+          } else {
+            // Fallback: count the array length
+            const data = await response.json();
+            totalSubscribers = Array.isArray(data) ? data.length : 0;
+          }
+        }
       } catch (error) {
         console.error('Error fetching subscriber count:', error);
       }

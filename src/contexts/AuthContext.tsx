@@ -73,30 +73,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Only send welcome email if we haven't already sent it for this user (via signUp)
           if (event === 'SIGNED_IN') {
             const userId = session.user.id;
-            
+
+            console.log('SIGNED_IN event for user:', userId, 'Already handled:', recentSignUpsRef.current.has(userId));
+
             // Only send if we haven't already handled this sign-up recently
             if (!recentSignUpsRef.current.has(userId)) {
               const userCreatedAt = new Date(session.user.created_at);
               const now = new Date();
               const minutesSinceCreation = (now.getTime() - userCreatedAt.getTime()) / (1000 * 60);
-              
+
+              console.log('Minutes since user creation:', minutesSinceCreation);
+
               // Only send if user was created within last 5 minutes (likely new sign-up)
               if (minutesSinceCreation < 5) {
+                console.log('Sending welcome email via onAuthStateChange');
+
                 // Mark this user so we don't send duplicate email
                 recentSignUpsRef.current.add(userId);
-                
+
                 // Fetch profile to get username
                 const { data: profileData } = await supabase
                   .from('profiles')
                   .select('username')
                   .eq('user_id', userId)
                   .maybeSingle();
-                
+
                 if (profileData) {
                   // Send welcome email only (admin notification is sent in signUp function)
                   sendWelcomeEmail(session.user.email!, profileData.username);
                 }
-                
+
                 // Clean up after 10 minutes
                 setTimeout(() => {
                   recentSignUpsRef.current.delete(userId);
@@ -247,14 +253,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // send welcome email immediately and mark user to prevent duplicate in onAuthStateChange
     if (!error && data.user && data.session) {
       const userId = data.user.id;
-      // Mark this user so onAuthStateChange doesn't send duplicate email
+
+      console.log('Sign up successful for user:', userId, 'Marking as handled');
+
+      // IMPORTANT: Mark this user IMMEDIATELY (before setTimeout) so onAuthStateChange doesn't send duplicate
       recentSignUpsRef.current.add(userId);
 
       // Send welcome email and notify admin after a short delay to ensure profile is created
       setTimeout(() => {
+        console.log('Sending emails from signUp function for:', email);
         sendWelcomeEmail(email, username);
         notifyAdminNewSubscriber(email, username);
-      }, 1500);
+      }, 2000); // Increased delay to ensure profile creation
 
       // Clean up after 10 minutes
       setTimeout(() => {

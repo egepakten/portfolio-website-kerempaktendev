@@ -9,24 +9,35 @@
 - `signUp()` function (for immediate sign-in)
 - `onAuthStateChange()` handler (for email confirmation flow)
 
-**Solution**: Removed the duplicate call from `onAuthStateChange()` handler. Now the notification is only sent once from the `signUp()` function.
+**Solution**:
+- Removed the duplicate call from `onAuthStateChange()` handler - admin notification only sent from `signUp()` function
+- Added `recentSignUpsRef` to track recent signups and prevent duplicates
+- Added console logging to track execution flow and debug issues
 
 **Files Modified**:
-- [src/contexts/AuthContext.tsx](src/contexts/AuthContext.tsx:95-98) - Removed duplicate admin notification call
+- [src/contexts/AuthContext.tsx](src/contexts/AuthContext.tsx) - Removed duplicate call, added deduplication logic and logging
 
 ---
 
-### 2. ✅ Email Template Improvements
-**Changes Made**:
-- ✅ Removed "View All Subscribers" button (not needed)
-- ✅ Added "Total Subscribers" count to the email
+### 2. ✅ Email Template & Subscriber Count
+**Problem**:
+- Email included unnecessary "View All Subscribers" button
+- Subscriber count was showing "0 active" instead of actual count (4 subscribers)
+
+**Cause**: Incorrect Supabase REST API query syntax - using `?select=count` doesn't properly return count
+
+**Solution**:
+- ✅ Removed "View All Subscribers" button from email template
+- ✅ Added "Total Subscribers" count to the email details
+- ✅ Fixed Supabase query to use `?select=*` with `Prefer: count=exact` header
+- ✅ Parse count from Content-Range header or fallback to array length
 - ✅ Shows only active/verified subscribers in the count
 
 **Files Modified**:
 - [supabase/functions/notify-admin-new-subscriber/index.ts](supabase/functions/notify-admin-new-subscriber/index.ts)
-  - Added Supabase query to count active subscribers (lines 43-58)
-  - Removed button from email template (line 111)
-  - Added total subscribers row to the details table (lines 106-109)
+  - Fixed Supabase query to properly count active subscribers (lines 43-72)
+  - Removed button from email template
+  - Added total subscribers row to the details table (lines 120-123)
 
 ---
 
