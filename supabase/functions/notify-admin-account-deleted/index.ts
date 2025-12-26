@@ -10,9 +10,10 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
-interface NotifyAdminRequest {
-  subscriberEmail: string;
-  subscriberName?: string;
+interface NotifyAccountDeletedRequest {
+  userEmail: string;
+  username?: string;
+  reason: string;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -25,83 +26,49 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { subscriberEmail, subscriberName }: NotifyAdminRequest = await req.json();
+    const { userEmail, username, reason }: NotifyAccountDeletedRequest = await req.json();
 
-    console.log(`Notifying admin about new subscriber: ${subscriberEmail}`);
+    console.log(`Notifying admin about account deletion: ${userEmail}`);
 
     const adminEmail = "egepakten@icloud.com";
-    const siteUrl = Deno.env.get("SITE_URL") || "https://kerempakten.dev";
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const displayName = subscriberName || "Anonymous";
-    const subscribedAt = new Date().toLocaleString('en-US', {
+    const displayName = username || "Anonymous";
+    const deletedAt = new Date().toLocaleString('en-US', {
       timeZone: 'UTC',
       dateStyle: 'full',
       timeStyle: 'long'
     });
 
-    // Get total subscriber count (only verified/active emails)
-    let totalSubscribers = 0;
-    if (supabaseUrl && supabaseServiceKey) {
-      try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/subscribers?is_active=eq.true&select=*`, {
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Prefer': 'count=exact'
-          }
-        });
-
-        if (response.ok) {
-          // Get count from Content-Range header
-          const contentRange = response.headers.get('content-range');
-          if (contentRange) {
-            const match = contentRange.match(/\/(\d+)$/);
-            if (match) {
-              totalSubscribers = parseInt(match[1], 10);
-            }
-          } else {
-            // Fallback: count the array length
-            const data = await response.json();
-            totalSubscribers = Array.isArray(data) ? data.length : 0;
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching subscriber count:', error);
-      }
-    }
-
     const emailResponse = await resend.emails.send({
       from: "Blog Notifications <noreply@kerempakten.dev>",
       to: [adminEmail],
-      subject: "🎉 New Subscriber Joined!",
+      subject: "⚠️ Account Deleted",
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>New Subscriber</title>
+          <title>Account Deleted</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc;">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!-- Header -->
             <tr>
-              <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🎉 New Subscriber!</h1>
+              <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">⚠️ Account Deleted</h1>
               </td>
             </tr>
 
             <!-- Main Content -->
             <tr>
               <td style="padding: 40px 30px;">
-                <h2 style="margin: 0 0 20px 0; color: #1a202c; font-size: 24px; font-weight: 600;">Great news!</h2>
+                <h2 style="margin: 0 0 20px 0; color: #1a202c; font-size: 24px; font-weight: 600;">Account Removal Notice</h2>
 
                 <p style="margin: 0 0 20px 0; color: #4a5568; font-size: 16px; line-height: 1.6;">
-                  Someone just subscribed to your blog. Here are the details:
+                  A user has deleted their account from your blog.
                 </p>
 
-                <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 24px; margin: 24px 0;">
                   <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                     <tr>
                       <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600;">Name:</td>
@@ -110,22 +77,22 @@ serve(async (req: Request): Promise<Response> => {
                     <tr>
                       <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600;">Email:</td>
                       <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 500;">
-                        <a href="mailto:${subscriberEmail}" style="color: #3b82f6; text-decoration: none;">${subscriberEmail}</a>
+                        <a href="mailto:${userEmail}" style="color: #ef4444; text-decoration: none;">${userEmail}</a>
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600;">Subscribed:</td>
-                      <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 500;">${subscribedAt}</td>
+                      <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600;">Deleted:</td>
+                      <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 500;">${deletedAt}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600;">Total Subscribers:</td>
-                      <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 500;">${totalSubscribers} active</td>
+                      <td style="padding: 8px 0; color: #64748b; font-size: 14px; font-weight: 600; vertical-align: top;">Reason:</td>
+                      <td style="padding: 8px 0; color: #1e293b; font-size: 15px; font-weight: 500;">${reason || 'Not specified'}</td>
                     </tr>
                   </table>
                 </div>
 
                 <p style="margin: 24px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6; text-align: center;">
-                  Keep creating great content! 🚀
+                  This deletion record has been saved in the deleted_accounts table.
                 </p>
               </td>
             </tr>
@@ -144,14 +111,14 @@ serve(async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Admin notification sent successfully:", emailResponse);
+    console.log("Admin notified about account deletion:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Admin notified" }),
+      JSON.stringify({ success: true, message: "Admin notified about account deletion" }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
-    console.error("Error notifying admin:", error);
+    console.error("Error notifying admin about deletion:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }

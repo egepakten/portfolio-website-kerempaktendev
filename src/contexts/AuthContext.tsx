@@ -332,25 +332,104 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: null };
   };
 
+  const sendAccountDeletionConfirmation = async (email: string, username?: string) => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Missing Supabase configuration for deletion confirmation');
+        return;
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-account-deletion-confirmation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          userEmail: email,
+          username: username
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error sending deletion confirmation to user:', errorData);
+      } else {
+        console.log('Deletion confirmation sent to user:', email);
+      }
+    } catch (error) {
+      console.error('Error calling send-account-deletion-confirmation Edge Function:', error);
+      // Don't throw error - notification failure shouldn't block deletion
+    }
+  };
+
+  const notifyAdminAccountDeleted = async (email: string, username?: string, reason?: string) => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Missing Supabase configuration for account deletion notification');
+        return;
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/notify-admin-account-deleted`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({
+          userEmail: email,
+          username: username,
+          reason: reason || 'Not specified'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error notifying admin about account deletion:', errorData);
+      } else {
+        console.log('Admin notified about account deletion:', email);
+      }
+    } catch (error) {
+      console.error('Error calling notify-admin-account-deleted Edge Function:', error);
+      // Don't throw error - notification failure shouldn't block deletion
+    }
+  };
+
   const deleteAccount = async (reason: string) => {
     if (!user) return { error: new Error('Not authenticated') };
-    
+
     const userId = user.id;
-    
+    const userEmail = user.email || '';
+    const userName = profile?.username || null;
+
     // Store the deletion record first
     const { error: insertError } = await supabase
       .from('deleted_accounts')
       .insert({
         user_id: userId,
-        email: user.email || '',
-        username: profile?.username || null,
+        email: userEmail,
+        username: userName,
         reason,
       });
-    
+
     if (insertError) {
       console.error('Error storing deletion record:', insertError);
       // Continue with deletion even if record fails
     }
+
+    // Send confirmation email to user
+    sendAccountDeletionConfirmation(userEmail, userName || undefined);
+
+    // Notify admin about account deletion
+    notifyAdminAccountDeleted(userEmail, userName || undefined, reason);
     
     // Delete user data in order: comments, likes, profile, subscription
     const { error: profileError } = await supabase

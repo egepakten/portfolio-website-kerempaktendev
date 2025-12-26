@@ -11,6 +11,14 @@ supabase functions deploy send-welcome-email
 echo "📧 Deploying notify-admin-new-subscriber..."
 supabase functions deploy notify-admin-new-subscriber
 
+# Deploy account deletion notification function
+echo "📧 Deploying notify-admin-account-deleted..."
+supabase functions deploy notify-admin-account-deleted
+
+# Deploy account deletion confirmation to user
+echo "📧 Deploying send-account-deletion-confirmation..."
+supabase functions deploy send-account-deletion-confirmation
+
 echo "✅ All functions deployed successfully!"
 echo ""
 echo "⚠️  Remember to set these environment variables in Supabase Dashboard:"

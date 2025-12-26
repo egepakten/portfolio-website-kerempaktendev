@@ -2,6 +2,31 @@
 
 ## Issues Fixed
 
+### 0. ✅ Subscriber Sync Button & Database Fixes
+**Problem**:
+- Admin panel subscriber count didn't match Supabase Auth user count
+- Deleted users remained in subscribers table
+- No way to manually refresh subscriber list
+
+**Cause**:
+- subscribers table had `ON DELETE SET NULL` instead of `ON DELETE CASCADE`
+- No sync button to manually refresh data
+
+**Solution**:
+- ✅ Added **Sync** button to Subscribers tab in admin panel
+- ✅ Created migration to fix CASCADE delete on subscribers table
+- ✅ Added cleanup function for orphaned subscriber records
+- ✅ Fixed table name in Edge Function from `subscriptions` to `subscribers`
+
+**Files Modified**:
+- [src/pages/AdminPage.tsx](src/pages/AdminPage.tsx) - Added sync button and handleSyncSubscribers function
+- [supabase/migrations/20251226_fix_subscriber_cascade_delete.sql](supabase/migrations/20251226_fix_subscriber_cascade_delete.sql) - Database migration
+- [supabase/functions/notify-admin-new-subscriber/index.ts](supabase/functions/notify-admin-new-subscriber/index.ts:47) - Fixed table name from `subscriptions` to `subscribers`
+
+---
+
+## Issues Fixed
+
 ### 1. ✅ Duplicate Admin Notification Emails
 **Problem**: Admin was receiving two notification emails for each new subscriber.
 
@@ -118,18 +143,51 @@ supabase functions deploy notify-admin-new-subscriber
 
 ---
 
+## New Features Added
+
+### ✅ Account Deletion Email Notifications
+**Feature**: Both admin and user receive email notifications when an account is deleted
+
+**Admin Notification Includes**:
+- User's name and email
+- Deletion timestamp
+- Reason for deletion
+- Red-themed email template to distinguish from new subscriber emails
+
+**User Confirmation Email Includes**:
+- Personalized goodbye message
+- List of what data was deleted
+- Deletion timestamp
+- Permanent deletion warning
+- Invitation to return in the future
+
+**Files Created**:
+- [supabase/functions/notify-admin-account-deleted/index.ts](supabase/functions/notify-admin-account-deleted/index.ts) - Admin notification Edge Function
+- [supabase/functions/send-account-deletion-confirmation/index.ts](supabase/functions/send-account-deletion-confirmation/index.ts) - User confirmation Edge Function
+
+**Files Modified**:
+- [src/contexts/AuthContext.tsx](src/contexts/AuthContext.tsx) - Added both notification functions
+- [deploy-functions.sh](deploy-functions.sh) - Added deployment for both new functions
+
+---
+
 ## Files Changed
 
 ### Modified:
-1. `src/contexts/AuthContext.tsx` - Fixed duplicate notification
+1. `src/contexts/AuthContext.tsx` - Fixed duplicate notification, added account deletion notification
 2. `src/components/blog/PostContent.tsx` - Fixed copy and spacing
 3. `src/index.css` - Updated code block margins
-4. `supabase/functions/notify-admin-new-subscriber/index.ts` - Added subscriber count
-5. `supabase/functions/notify-admin-new-subscriber/README.md` - Updated docs
-6. `EDGE_FUNCTIONS_TROUBLESHOOTING.md` - Updated environment variables
+4. `src/pages/AdminPage.tsx` - Added sync button for subscribers
+5. `supabase/functions/notify-admin-new-subscriber/index.ts` - Fixed table name and subscriber count
+6. `supabase/functions/notify-admin-new-subscriber/README.md` - Updated docs
+7. `EDGE_FUNCTIONS_TROUBLESHOOTING.md` - Updated environment variables
+8. `deploy-functions.sh` - Added new Edge Function deployment
 
 ### Created:
 1. `CHANGES_SUMMARY.md` - This file
+2. `supabase/functions/notify-admin-account-deleted/index.ts` - Admin notification for account deletion
+3. `supabase/functions/send-account-deletion-confirmation/index.ts` - User confirmation email for account deletion
+4. `supabase/migrations/20251226_fix_subscriber_cascade_delete.sql` - Database fix for CASCADE delete
 
 ---
 
