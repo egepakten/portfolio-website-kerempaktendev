@@ -214,12 +214,19 @@
   }
 
   .prose-custom pre {
-    @apply bg-secondary rounded-lg p-4 overflow-x-auto my-4 border border-border;
+    @apply bg-secondary rounded-lg p-4 overflow-x-auto border border-border;
+    margin: 0;
   }
 
-  /* When code block has a language header, round only bottom corners */
-  .prose-custom > div:has(> div:first-child) pre {
-    @apply rounded-t-none border-t-0 my-0;
+  /* When code block has a language header, round only bottom corners and connect */
+  .prose-custom div.group pre {
+    @apply rounded-t-none border-t-0;
+  }
+
+  /* Add proper margin to code block containers */
+  .prose-custom div.group {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
   .prose-custom code {

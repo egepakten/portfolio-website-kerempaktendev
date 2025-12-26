@@ -97,7 +97,8 @@ const CodeBlock = ({ children, className, ...props }: React.HTMLAttributes<HTMLE
   const isInline = !className;
 
   const handleCopy = async () => {
-    const code = String(children).replace(/\n$/, '');
+    // Extract only text content from children (excluding React elements)
+    const code = getTextContent(children).replace(/\n$/, '');
     await navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -108,9 +109,9 @@ const CodeBlock = ({ children, className, ...props }: React.HTMLAttributes<HTMLE
   }
 
   return (
-    <div className="relative group my-4">
+    <div className="relative group mb-2 ">
       {language && (
-        <div className="flex items-center justify-between bg-secondary/50 border border-border rounded-t-lg px-4 py-2 -mb-1">
+        <div className="flex items-center justify-between bg-secondary/50 border border-border rounded-t-lg px-4 py-2 mb-6 ">
           <span className="text-xs text-muted-foreground font-mono">
             {language}
           </span>
