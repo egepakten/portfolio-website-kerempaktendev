@@ -34,9 +34,24 @@ const ALLOWED_EMAIL_DOMAINS = [
 
 // List of inappropriate words to block in usernames
 const INAPPROPRIATE_WORDS = [
-  'fuck', 'shit', 'damn', 'hell', 'bastard', 'bitch', 'ass', 'dick', 'cock',
-  'pussy', 'cunt', 'fag', 'nigger', 'nigga', 'retard', 'whore', 'slut',
-  'admin', 'moderator', 'support', 'official', 'system', 'bot', 'test',
+  // Profanity and vulgar terms
+  'fuck', 'fucker', 'fucking', 'motherfuck', 'motherfucker', 'fuk', 'fck',
+  'shit', 'shit', 'bullshit', 'horseshit', 'crap',
+  'damn', 'damned', 'dammit',
+  'hell', 'bastard', 'bitch', 'bitching',
+  'ass', 'asshole', 'arse', 'arsehole', 'badass',
+  'dick', 'dickhead', 'cock', 'penis',
+  'pussy', 'vagina', 'cunt',
+  'fag', 'faggot', 'queer',
+  'nigger', 'nigga', 'negro',
+  'retard', 'retarded', 'idiot', 'moron',
+  'whore', 'slut', 'prostitute',
+  // Sexual terms
+  'sex', 'porn', 'xxx', 'anal', 'oral',
+  // Reserved system words
+  'admin', 'administrator', 'moderator', 'mod',
+  'support', 'official', 'system', 'root',
+  'bot', 'test', 'demo', 'null', 'undefined',
 ];
 
 const validateUsername = (username: string): { valid: boolean; message?: string } => {
@@ -64,8 +79,21 @@ const validateUsername = (username: string): { valid: boolean; message?: string 
 
   // Check for inappropriate words
   const lowerUsername = username.toLowerCase();
+  // Remove spaces and common number substitutions to catch variations like "M0therFucker" or "Mother Fucker"
+  const normalizedUsername = lowerUsername
+    .replace(/\s+/g, '') // Remove spaces
+    .replace(/0/g, 'o')   // 0 -> o
+    .replace(/1/g, 'i')   // 1 -> i
+    .replace(/3/g, 'e')   // 3 -> e
+    .replace(/4/g, 'a')   // 4 -> a
+    .replace(/5/g, 's')   // 5 -> s
+    .replace(/7/g, 't')   // 7 -> t
+    .replace(/8/g, 'b')   // 8 -> b
+    .replace(/\$/g, 's')  // $ -> s
+    .replace(/@/g, 'a');  // @ -> a
+
   for (const word of INAPPROPRIATE_WORDS) {
-    if (lowerUsername.includes(word)) {
+    if (normalizedUsername.includes(word)) {
       return {
         valid: false,
         message: 'Display name contains inappropriate content. Please choose a different name.',
