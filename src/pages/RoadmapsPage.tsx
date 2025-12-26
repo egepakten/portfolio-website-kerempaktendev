@@ -1,14 +1,18 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Map, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Map, ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useRoadmapStore } from '@/store/roadmapStore';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function RoadmapsPage() {
   const { roadmaps, isLoading, fetchRoadmaps } = useRoadmapStore();
+  const { user, subscription, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRoadmaps();
@@ -16,6 +20,98 @@ export default function RoadmapsPage() {
 
   // Only show published roadmaps
   const publishedRoadmaps = roadmaps.filter(r => r.isPublished);
+
+  // Check if user has access (must be subscribed)
+  const hasAccess = user && subscription && subscription.is_active;
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-12 max-w-5xl">
+          <div className="text-center">
+            <Skeleton className="h-16 w-16 rounded-full mx-auto mb-4" />
+            <Skeleton className="h-12 w-64 mx-auto mb-4" />
+            <Skeleton className="h-6 w-96 mx-auto" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show access denied message if user is not subscribed
+  if (!hasAccess) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-12 max-w-3xl">
+          <Card className="border-2">
+            <CardHeader className="text-center pb-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mx-auto mb-4">
+                <Lock className="w-10 h-10 text-primary" />
+              </div>
+              <CardTitle className="text-3xl font-serif mb-3">Subscriber-Only Content</CardTitle>
+              <CardDescription className="text-base">
+                Learning roadmaps are exclusive to newsletter subscribers
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-muted/50 rounded-lg p-6">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Map className="w-5 h-5 text-primary" />
+                  What You'll Get Access To:
+                </h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span>Interactive visual learning roadmaps for various tech domains</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span>Track your progress as you learn</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span>Direct links to related blog posts for each topic</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span>Plus regular updates when new content is published</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  className="flex-1"
+                  size="lg"
+                  onClick={() => navigate('/auth?tab=signup')}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Subscribe to Access
+                </Button>
+                {!user && (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="flex-1"
+                    onClick={() => navigate('/auth?tab=login')}
+                  >
+                    Already Subscribed? Sign In
+                  </Button>
+                )}
+              </div>
+
+              {user && !subscription?.is_active && (
+                <p className="text-sm text-center text-muted-foreground pt-2">
+                  You're signed in but not subscribed. Subscribe to unlock roadmaps!
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

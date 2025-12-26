@@ -145,6 +145,28 @@ supabase functions deploy notify-admin-new-subscriber
 
 ## New Features Added
 
+### ✅ Roadmaps Subscriber-Only Access
+**Feature**: Learning roadmaps are now locked and only accessible to subscribed users
+
+**Access Control**:
+- Users must be signed in AND have an active subscription to view roadmaps
+- Non-subscribers see a professional lock screen with subscription benefits
+- Clear call-to-action buttons to subscribe or sign in
+- Works on both roadmaps list page and individual roadmap pages
+
+**Lock Screen Includes**:
+- Large lock icon and clear messaging
+- List of what subscribers get access to
+- "Subscribe to Access" button (redirects to signup)
+- "Already Subscribed? Sign In" button (for non-signed-in users)
+- Message for signed-in users who haven't subscribed yet
+
+**Files Modified**:
+- [src/pages/RoadmapsPage.tsx](src/pages/RoadmapsPage.tsx) - Added auth check and lock screen
+- [src/pages/RoadmapPage.tsx](src/pages/RoadmapPage.tsx) - Added auth check and lock screen
+
+---
+
 ### ✅ Account Deletion Email Notifications
 **Feature**: Both admin and user receive email notifications when an account is deleted
 
@@ -174,14 +196,16 @@ supabase functions deploy notify-admin-new-subscriber
 ## Files Changed
 
 ### Modified:
-1. `src/contexts/AuthContext.tsx` - Fixed duplicate notification, added account deletion notification
+1. `src/contexts/AuthContext.tsx` - Fixed duplicate notification, added account deletion notifications
 2. `src/components/blog/PostContent.tsx` - Fixed copy and spacing
 3. `src/index.css` - Updated code block margins
 4. `src/pages/AdminPage.tsx` - Added sync button for subscribers
-5. `supabase/functions/notify-admin-new-subscriber/index.ts` - Fixed table name and subscriber count
-6. `supabase/functions/notify-admin-new-subscriber/README.md` - Updated docs
-7. `EDGE_FUNCTIONS_TROUBLESHOOTING.md` - Updated environment variables
-8. `deploy-functions.sh` - Added new Edge Function deployment
+5. `src/pages/RoadmapsPage.tsx` - Added subscriber-only access control
+6. `src/pages/RoadmapPage.tsx` - Added subscriber-only access control
+7. `supabase/functions/notify-admin-new-subscriber/index.ts` - Fixed table name and subscriber count
+8. `supabase/functions/notify-admin-new-subscriber/README.md` - Updated docs
+9. `EDGE_FUNCTIONS_TROUBLESHOOTING.md` - Updated environment variables
+10. `deploy-functions.sh` - Added new Edge Function deployments
 
 ### Created:
 1. `CHANGES_SUMMARY.md` - This file
